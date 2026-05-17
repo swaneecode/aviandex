@@ -800,17 +800,19 @@ function capturePhoto() {
   c.height = vh;
   const ctx = c.getContext('2d');
 
-  // Always crop the center zoomed region so distant birds are enlarged for AI
-  const zoom = Math.max(currentZoom, 1);
-  const sw = vw / zoom;
-  const sh = vh / zoom;
-  const sx = (vw - sw) / 2;
-  const sy = (vh - sh) / 2;
-  ctx.drawImage(v, sx, sy, sw, sh, 0, 0, vw, vh);
+  // Only crop digitally if user has zoomed in beyond 1.5x
+  if (currentZoom > 1.5) {
+    const sw = vw / currentZoom;
+    const sh = vh / currentZoom;
+    const sx = (vw - sw) / 2;
+    const sy = (vh - sh) / 2;
+    ctx.drawImage(v, sx, sy, sw, sh, 0, 0, vw, vh);
+  } else {
+    ctx.drawImage(v, 0, 0);
+  }
 
   stopStream();
-  // Use high quality for better AI recognition
-  analyzePhoto(c.toDataURL('image/jpeg', 0.95));
+  analyzePhoto(c.toDataURL('image/jpeg', 0.92));
 }
 
 function handleGallery(e) {
