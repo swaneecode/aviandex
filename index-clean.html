@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AvianDex</title>
+<link href="https://fonts.googleapis.com/css2?family=Righteous&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sky:#080f1a;--sky2:#0c1a2e;--panel:rgba(255,255,255,0.05);
+  --pb:rgba(0,210,180,0.18);--teal:#00d4b4;--teal2:#00ffe8;
+  --gold:#f7c948;--coral:#ff6b6b;--green:#3dffa0;--purple:#a78bfa;
+  --text:#dff0f5;--muted:#5a8090;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--sky);color:var(--text);font-family:'Nunito',sans-serif}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;transition:opacity .3s,transform .3s;overflow:hidden}
+.screen.hidden{opacity:0;pointer-events:none;transform:translateY(16px)}
+.scrollable{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
+.bg-stars{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(1px 1px at 12% 8%,rgba(255,255,255,.9) 0%,transparent 100%),
+  radial-gradient(1.5px 1.5px at 78% 15%,rgba(255,255,255,.7) 0%,transparent 100%),
+  radial-gradient(1px 1px at 45% 3%,rgba(255,255,255,.8) 0%,transparent 100%),
+  radial-gradient(1px 1px at 90% 40%,rgba(255,255,255,.5) 0%,transparent 100%),
+  radial-gradient(1px 1px at 25% 55%,rgba(255,255,255,.6) 0%,transparent 100%),
+  radial-gradient(1.5px 1.5px at 60% 75%,rgba(255,255,255,.4) 0%,transparent 100%),
+  radial-gradient(1px 1px at 8% 82%,rgba(255,255,255,.7) 0%,transparent 100%),
+  radial-gradient(1px 1px at 55% 92%,rgba(255,255,255,.5) 0%,transparent 100%);}
+.bg-glow{position:fixed;bottom:-100px;left:50%;transform:translateX(-50%);width:600px;height:400px;border-radius:50%;z-index:0;pointer-events:none;background:radial-gradient(ellipse,rgba(0,212,180,.07) 0%,transparent 70%)}
+
+/* ══ ONBOARDING ══ */
+#onboardScreen{z-index:300;background:var(--sky);align-items:center;justify-content:center}
+.ob-wrap{position:relative;z-index:1;max-width:360px;width:90%;text-align:center;padding:40px 24px}
+.ob-logo{font-family:'Righteous',cursive;font-size:38px;background:linear-gradient(130deg,var(--teal),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px}
+.ob-tagline{font-size:13px;color:var(--muted);margin-bottom:36px;line-height:1.5}
+.ob-label{font-size:11px;color:var(--teal2);font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;text-align:left}
+.ob-input{width:100%;background:rgba(255,255,255,.07);border:1px solid var(--pb);border-radius:14px;padding:14px 16px;font-size:16px;color:var(--text);font-family:'Nunito',sans-serif;margin-bottom:20px;outline:none}
+.ob-input:focus{border-color:var(--teal)}
+.avatar-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:28px}
+.av-opt{aspect-ratio:1;border-radius:12px;background:rgba(255,255,255,.06);border:2px solid transparent;display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;transition:all .2s}
+.av-opt.sel{border-color:var(--teal);background:rgba(0,212,180,.15);box-shadow:0 0 12px rgba(0,212,180,.3)}
+.ob-btn{width:100%;padding:16px;border:none;border-radius:16px;background:linear-gradient(135deg,var(--teal),var(--gold));font-family:'Righteous',cursive;font-size:18px;letter-spacing:1px;color:var(--sky);cursor:pointer;transition:transform .15s,opacity .2s}
+.ob-btn:active{transform:scale(.98)}
+.ob-btn:disabled{opacity:.35;cursor:default}
+
+/* ══ HOME ══ */
+#homeScreen{z-index:10}
+.home-inner{position:relative;z-index:1;max-width:440px;margin:0 auto;padding:0 16px 100px}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:18px 0 12px}
+.logo{font-family:'Righteous',cursive;font-size:26px;background:linear-gradient(130deg,var(--teal),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.trainer-pill{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--pb);border-radius:24px;padding:6px 14px 6px 8px;cursor:pointer}
+.t-av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--purple));display:flex;align-items:center;justify-content:center;font-size:16px}
+.t-name{font-size:12px;font-weight:800;color:var(--teal2)}
+.t-lvl{font-size:10px;color:var(--muted)}
+.xp-wrap{margin-bottom:14px}
+.xp-row{display:flex;justify-content:space-between;margin-bottom:5px}
+.xp-lbl{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.xp-val{font-size:11px;color:var(--gold);font-weight:800}
+.xp-track{height:9px;background:rgba(255,255,255,.07);border-radius:5px;overflow:hidden}
+.xp-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--gold));border-radius:5px;transition:width .8s ease}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.stat{background:var(--panel);border:1px solid var(--pb);border-radius:16px;padding:12px 8px;text-align:center}
+.stat-ic{font-size:22px;margin-bottom:2px}
+.stat-n{font-family:'Righteous',cursive;font-size:22px;color:var(--gold)}
+.stat-l{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.capture-banner{background:linear-gradient(135deg,rgba(0,212,180,.15),rgba(247,201,72,.1));border:1px solid rgba(0,212,180,.3);border-radius:20px;padding:18px 20px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:transform .15s;position:relative;overflow:hidden}
+.capture-banner::before{content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);animation:shine 3.5s ease-in-out infinite}
+@keyframes shine{0%{left:-100%}100%{left:200%}}
+.capture-banner:active{transform:scale(.98)}
+.banner-text h3{font-family:'Righteous',cursive;font-size:18px;color:var(--teal2);margin-bottom:3px}
+.banner-text p{font-size:12px;color:var(--muted)}
+.cam-fab{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--gold));display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;box-shadow:0 4px 20px rgba(0,212,180,.4);animation:bob 2.5s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.sec-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.sec-title{font-family:'Righteous',cursive;font-size:15px;color:var(--teal2)}
+.sec-count{font-size:11px;color:var(--muted)}
+
+/* ══ EVENTS STRIP ══ */
+.events-strip{margin-bottom:18px}
+.events-scroll{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.events-scroll::-webkit-scrollbar{display:none}
+.event-card{flex-shrink:0;width:190px;border-radius:18px;padding:14px;cursor:pointer;transition:transform .2s}
+.event-card:active{transform:scale(.97)}
+.event-card.ev-active{border:1px solid rgba(247,201,72,.4);background:linear-gradient(135deg,rgba(247,201,72,.12),rgba(255,107,107,.08))}
+.event-card.ev-upcoming{border:1px solid rgba(0,212,180,.25);background:linear-gradient(135deg,rgba(0,212,180,.08),rgba(167,139,250,.06))}
+.ev-badge{display:inline-block;font-size:9px;font-weight:800;padding:2px 8px;border-radius:6px;margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase}
+.ev-badge.live{background:rgba(61,255,160,.2);color:var(--green);border:1px solid rgba(61,255,160,.3)}
+.ev-badge.soon{background:rgba(0,212,180,.15);color:var(--teal2);border:1px solid rgba(0,212,180,.25)}
+.ev-icon{font-size:28px;margin-bottom:4px;display:block}
+.ev-name{font-family:'Righteous',cursive;font-size:13px;margin-bottom:3px}
+.ev-desc{font-size:10px;color:var(--muted);line-height:1.4;margin-bottom:6px}
+.ev-bonus{font-size:10px;color:var(--gold);font-weight:800}
+.ev-timer{font-size:9px;color:var(--muted);margin-top:4px;font-weight:700}
+
+/* ══ DEX GRID ══ */
+.dex-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.dex-card{background:var(--panel);border:1px solid var(--pb);border-radius:16px;padding:12px 8px 10px;text-align:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.dex-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,212,180,.2)}
+.dex-card.leg-card{border-color:rgba(247,201,72,.3)}
+.dex-card.leg-card::after{content:'';position:absolute;top:-50%;left:-60%;width:40%;height:200%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.07),transparent);animation:shimmer 4s ease-in-out infinite}
+@keyframes shimmer{0%{left:-60%}100%{left:140%}}
+.dc-num{position:absolute;top:6px;left:8px;font-size:9px;color:var(--muted);font-family:'Righteous',cursive}
+.dc-rar{position:absolute;top:6px;right:8px;font-size:10px}
+.dc-em{font-size:32px;display:block;margin:6px 0 4px}
+.dc-nm{font-size:10px;font-weight:800;line-height:1.2;margin-bottom:2px}
+.dc-st{font-size:9px;color:var(--muted)}
+.dc-ck{position:absolute;bottom:6px;right:6px;width:15px;height:15px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:8px;color:#000;font-weight:900}
+.dc-ph{position:absolute;bottom:6px;left:6px;width:20px;height:20px;border-radius:6px;object-fit:cover;border:1px solid var(--teal)}
+.new-badge{position:absolute;top:-5px;left:50%;transform:translateX(-50%);background:var(--coral);color:#fff;font-size:8px;font-weight:900;padding:2px 7px;border-radius:6px;white-space:nowrap;letter-spacing:.5px;box-shadow:0 2px 8px rgba(255,107,107,.4)}
+.dex-empty{text-align:center;padding:40px 20px;color:var(--muted);grid-column:1/-1}
+.dex-empty-ic{font-size:48px;display:block;margin-bottom:12px}
+.dex-empty-t{font-family:'Righteous',cursive;font-size:16px;color:var(--teal2);margin-bottom:8px}
+
+/* ══ CAMERA ══ */
+#cameraScreen{z-index:100;background:#000}
+.cam-top{position:absolute;top:0;left:0;right:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:16px 20px;background:linear-gradient(to bottom,rgba(0,0,0,.75),transparent)}
+.cam-title{font-family:'Righteous',cursive;font-size:18px;color:var(--teal2)}
+.cam-close{width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;color:#fff}
+#videoEl{width:100%;height:100%;object-fit:cover;display:block}
+
+/* Viewfinder */
+.viewfinder{position:absolute;inset:0;z-index:5;pointer-events:none;display:flex;align-items:center;justify-content:center}
+.vf-frame{width:260px;height:260px;position:relative}
+.vf-c{position:absolute;width:30px;height:30px;border-color:var(--teal2);border-style:solid}
+.vf-c.tl{top:0;left:0;border-width:3px 0 0 3px}
+.vf-c.tr{top:0;right:0;border-width:3px 3px 0 0}
+.vf-c.bl{bottom:0;left:0;border-width:0 0 3px 3px}
+.vf-c.br{bottom:0;right:0;border-width:0 3px 3px 0}
+.vf-scan{position:absolute;left:4px;right:4px;height:2px;background:linear-gradient(90deg,transparent,var(--teal2),transparent);animation:scan 2.5s ease-in-out infinite}
+@keyframes scan{0%,100%{top:4px;opacity:.8}50%{top:calc(100% - 4px);opacity:1}}
+.vf-hint{position:absolute;bottom:-36px;left:50%;transform:translateX(-50%);font-size:12px;color:rgba(255,255,255,.8);white-space:nowrap;font-weight:700;background:rgba(0,0,0,.4);padding:4px 10px;border-radius:8px}
+
+/* Zoom controls */
+.zoom-controls{position:absolute;right:16px;top:50%;transform:translateY(-50%);z-index:10;display:flex;flex-direction:column;gap:10px}
+.zoom-btn{width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s}
+.zoom-btn:active{background:rgba(0,212,180,.4)}
+.zoom-level{width:44px;height:28px;border-radius:8px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.2);color:var(--teal2);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+
+/* Zoom slider */
+.zoom-slider-wrap{position:absolute;bottom:140px;left:50%;transform:translateX(-50%);z-index:10;display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.5);padding:8px 16px;border-radius:20px}
+.zoom-slider-wrap span{font-size:11px;color:rgba(255,255,255,.7);font-weight:700;white-space:nowrap}
+#zoomSlider{-webkit-appearance:none;appearance:none;width:140px;height:4px;border-radius:2px;background:rgba(255,255,255,.25);outline:none}
+#zoomSlider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:var(--teal2);cursor:pointer;box-shadow:0 0 8px rgba(0,212,180,.5)}
+
+.cam-bottom{position:absolute;bottom:0;left:0;right:0;z-index:10;padding:20px 40px 44px;background:linear-gradient(to top,rgba(0,0,0,.85),transparent);display:flex;align-items:center;justify-content:center;gap:40px}
+.cam-gal{width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer}
+#galInput{display:none}
+.shutter{width:74px;height:74px;border-radius:50%;background:#fff;border:4px solid rgba(255,255,255,.3);cursor:pointer;transition:transform .1s;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 6px rgba(255,255,255,.15)}
+.shutter:active{transform:scale(.9)}
+.shutter-in{width:60px;height:60px;border-radius:50%;background:#fff}
+
+/* ══ ANALYZING ══ */
+#analyzingScreen{z-index:200;background:rgba(8,15,26,.97);align-items:center;justify-content:center}
+.az-wrap{text-align:center;padding:40px;position:relative;z-index:1}
+#previewImg{width:220px;height:220px;object-fit:cover;border-radius:24px;border:2px solid var(--teal);box-shadow:0 0 40px rgba(0,212,180,.3);margin-bottom:28px;animation:imgF 3s ease-in-out infinite}
+@keyframes imgF{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.az-title{font-family:'Righteous',cursive;font-size:22px;color:var(--teal2);margin-bottom:8px}
+.az-sub{font-size:13px;color:var(--muted);margin-bottom:16px}
+.dots span{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--teal);margin:0 3px;animation:db .9s ease-in-out infinite}
+.dots span:nth-child(2){animation-delay:.15s}.dots span:nth-child(3){animation-delay:.3s}
+@keyframes db{0%,80%,100%{transform:scale(.7);opacity:.5}40%{transform:scale(1.1);opacity:1}}
+
+/* ══ RESULT ══ */
+#resultScreen{z-index:200}
+.res-inner{position:relative;z-index:1;max-width:440px;margin:0 auto;padding:24px 20px 100px}
+.res-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.res-back{width:38px;height:38px;border-radius:12px;background:var(--panel);border:1px solid var(--pb);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer}
+.res-heading{font-family:'Righteous',cursive;font-size:16px;color:var(--teal2)}
+.bird-hero{border-radius:24px;overflow:hidden;position:relative;margin-bottom:16px;aspect-ratio:4/3;background:var(--panel)}
+.bird-hero img{width:100%;height:100%;object-fit:cover;display:block}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(8,15,26,.92) 0%,transparent 55%);display:flex;flex-direction:column;justify-content:flex-end;padding:20px}
+.res-em{font-size:52px;display:block;margin-bottom:4px}
+.res-nm{font-family:'Righteous',cursive;font-size:26px;color:#fff;line-height:1.1}
+.res-sci{font-size:13px;color:rgba(255,255,255,.6);font-style:italic;margin-top:2px}
+.res-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.rtag{font-size:10px;font-weight:800;padding:4px 12px;border-radius:10px;letter-spacing:.5px;text-transform:uppercase}
+.rt-legendary{background:rgba(247,201,72,.2);color:var(--gold);border:1px solid rgba(247,201,72,.35)}
+.rt-rare{background:rgba(167,139,250,.2);color:var(--purple);border:1px solid rgba(167,139,250,.35)}
+.rt-common{background:rgba(61,255,160,.15);color:var(--green);border:1px solid rgba(61,255,160,.3)}
+.rt-hab{background:rgba(61,255,160,.1);color:var(--green);border:1px solid rgba(61,255,160,.2)}
+.rt-diet{background:rgba(0,212,180,.1);color:var(--teal2);border:1px solid rgba(0,212,180,.2)}
+.rt-region{background:rgba(167,139,250,.1);color:var(--purple);border:1px solid rgba(167,139,250,.2)}
+.xp-banner{background:linear-gradient(135deg,rgba(247,201,72,.15),rgba(0,212,180,.1));border:1px solid rgba(247,201,72,.25);border-radius:16px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.xp-lbl2{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.xp-amt{font-family:'Righteous',cursive;font-size:28px;color:var(--gold)}
+.ev-bonus-banner{background:rgba(247,201,72,.1);border:1px solid rgba(247,201,72,.25);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--gold);font-weight:800;display:flex;align-items:center;gap:8px}
+.conf-wrap{margin-bottom:16px}
+.conf-lbl{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:6px;display:flex;justify-content:space-between}
+.conf-track{height:8px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden}
+.conf-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--green),var(--teal));transition:width .8s ease}
+.fact-card{background:var(--panel);border:1px solid var(--pb);border-left:3px solid var(--teal);border-radius:14px;padding:16px;margin-bottom:20px}
+.fact-hd{font-size:10px;font-weight:800;color:var(--teal2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.fact-bd{font-size:13px;color:var(--muted);line-height:1.7}
+.already-banner{background:rgba(61,255,160,.08);border:1px solid rgba(61,255,160,.25);border-radius:16px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--green);font-weight:700}
+.res-btn{width:100%;padding:16px;border:none;border-radius:16px;font-family:'Righteous',cursive;font-size:18px;letter-spacing:1px;cursor:pointer;transition:transform .15s;margin-bottom:10px}
+.res-btn.pri{background:linear-gradient(135deg,var(--teal),var(--gold));color:var(--sky);box-shadow:0 4px 20px rgba(0,212,180,.3)}
+.res-btn.pri:active{transform:scale(.98)}
+.res-btn.sec{background:var(--panel);border:1px solid var(--pb);color:var(--muted);font-size:14px}
+.not-bird{text-align:center;padding:30px 10px}
+.nb-em{font-size:64px;display:block;margin-bottom:16px}
+.nb-ti{font-family:'Righteous',cursive;font-size:22px;color:var(--coral);margin-bottom:8px}
+.nb-sub{font-size:14px;color:var(--muted);line-height:1.6}
+
+/* ══ JOURNAL ══ */
+#journalScreen{z-index:10}
+.journal-inner{position:relative;z-index:1;max-width:440px;margin:0 auto;padding:0 16px 100px}
+.journal-empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.journal-empty-em{font-size:56px;display:block;margin-bottom:12px}
+.journal-entry{background:var(--panel);border:1px solid var(--pb);border-radius:20px;overflow:hidden;margin-bottom:14px}
+.je-photo{width:100%;height:160px;object-fit:cover;display:block}
+.je-placeholder{width:100%;height:120px;background:linear-gradient(135deg,var(--sky2),rgba(0,212,180,.08));display:flex;align-items:center;justify-content:center;font-size:52px}
+.je-body{padding:14px 16px}
+.je-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.je-name{font-family:'Righteous',cursive;font-size:16px}
+.je-date{font-size:10px;color:var(--muted);font-weight:700;white-space:nowrap;margin-top:3px}
+.je-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.je-tag{font-size:9px;font-weight:800;padding:3px 9px;border-radius:8px;text-transform:uppercase;letter-spacing:.4px}
+.jt-leg{background:rgba(247,201,72,.15);color:var(--gold);border:1px solid rgba(247,201,72,.25)}
+.jt-rare{background:rgba(167,139,250,.15);color:var(--purple);border:1px solid rgba(167,139,250,.25)}
+.jt-com{background:rgba(61,255,160,.1);color:var(--green);border:1px solid rgba(61,255,160,.2)}
+.je-xp{font-size:11px;color:var(--gold);font-weight:800;margin-bottom:8px}
+.je-fact{font-size:12px;color:var(--muted);line-height:1.5;border-top:1px solid rgba(255,255,255,.06);padding-top:10px}
+.month-div{display:flex;align-items:center;gap:10px;margin:18px 0 12px}
+.month-div span{font-family:'Righteous',cursive;font-size:12px;color:var(--teal2);white-space:nowrap}
+.month-div::before,.month-div::after{content:'';flex:1;height:1px;background:rgba(0,212,180,.15)}
+
+/* ══ EVENTS FULL ══ */
+#eventsScreen{z-index:10}
+.events-inner{position:relative;z-index:1;max-width:440px;margin:0 auto;padding:0 16px 100px}
+.evf-card{background:var(--panel);border:1px solid var(--pb);border-radius:20px;overflow:hidden;margin-bottom:14px}
+.evf-hero{height:90px;display:flex;align-items:center;justify-content:center;font-size:52px}
+.evf-hero.ah{background:linear-gradient(135deg,rgba(247,201,72,.15),rgba(255,107,107,.1))}
+.evf-hero.uh{background:linear-gradient(135deg,rgba(0,212,180,.12),rgba(167,139,250,.08))}
+.evf-body{padding:16px}
+.evf-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.evf-name{font-family:'Righteous',cursive;font-size:17px}
+.evf-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:10px}
+.evf-dates{font-size:10px;color:var(--muted);font-weight:700;margin-bottom:14px}
+.evf-rewards{display:flex;gap:10px}
+.evf-rew{flex:1;background:rgba(247,201,72,.08);border:1px solid rgba(247,201,72,.15);border-radius:12px;padding:10px;text-align:center}
+.evf-rew-ic{font-size:22px;display:block;margin-bottom:3px}
+.evf-rew-lbl{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.evf-rew-val{font-size:12px;color:var(--gold);font-weight:800}
+
+/* ══ BOTTOM NAV ══ */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:50;background:rgba(8,15,26,.95);backdrop-filter:blur(16px);border-top:1px solid var(--pb);display:flex;padding:10px 0 max(10px,env(safe-area-inset-bottom))}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0}
+.nav-ic{font-size:22px;transition:filter .2s}
+.nav-lb{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);transition:color .2s}
+.nav-item.active .nav-lb{color:var(--teal2)}
+.nav-item.active .nav-ic{filter:drop-shadow(0 0 6px var(--teal))}
+
+/* ══ TOAST ══ */
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-110px);background:linear-gradient(135deg,#0c1a2e,#0a1628);border:1px solid var(--teal);border-radius:18px;padding:12px 20px;z-index:500;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;box-shadow:0 8px 32px rgba(0,0,0,.5);transition:transform .4s cubic-bezier(.34,1.56,.64,1);max-width:320px;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast-ic{font-size:22px}
+.toast-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.confetti{position:fixed;top:0;pointer-events:none;z-index:600;width:8px;height:8px;border-radius:2px;animation:cf 1.8s ease-in forwards}
+@keyframes cf{0%{opacity:1;transform:translateY(-10px) rotate(0)}100%{opacity:0;transform:translateY(100vh) rotate(720deg)}}
+</style>
+</head>
+<body>
+<div class="bg-stars"></div>
+<div class="bg-glow"></div>
+
+<!-- ══════════ ONBOARDING ══════════ -->
+<div class="screen" id="onboardScreen">
+  <div class="bg-stars"></div>
+  <div class="ob-wrap">
+    <div class="ob-logo">🦅 AvianDex</div>
+    <div class="ob-tagline">Photograph birds anywhere in the world.<br>Build your personal field journal.</div>
+    <div class="ob-label">Your Birder Name</div>
+    <input class="ob-input" id="nameInput" type="text" placeholder="e.g. WendyBirds" maxlength="20" oninput="checkObReady()">
+    <div class="ob-label">Pick Your Avatar</div>
+    <div class="avatar-grid" id="avatarGrid"></div>
+    <button class="ob-btn" id="obBtn" disabled onclick="finishOnboard()">Start Birding! 🦜</button>
+  </div>
+</div>
+
+<!-- ══════════ HOME ══════════ -->
+<div class="screen hidden" id="homeScreen">
+  <div class="scrollable">
+    <div class="home-inner">
+      <div class="topbar">
+        <div class="logo">🦅 AvianDex</div>
+        <div class="trainer-pill" onclick="goScreen('profileScreen')">
+          <div class="t-av" id="profileAv">🌿</div>
+          <div><div class="t-name" id="profileName">Scout</div><div class="t-lvl" id="profileLvl">Fledgling Lv.1</div></div>
+        </div>
+      </div>
+      <div class="xp-wrap">
+        <div class="xp-row"><span class="xp-lbl">⚡ Scout XP</span><span class="xp-val" id="xpVal">0 XP</span></div>
+        <div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="stat-ic">🦜</div><div class="stat-n" id="caughtCt">0</div><div class="stat-l">Species</div></div>
+        <div class="stat"><div class="stat-ic">🔥</div><div class="stat-n" id="streakCt">0</div><div class="stat-l">Streak</div></div>
+        <div class="stat"><div class="stat-ic">⭐</div><div class="stat-n" id="legendCt">0</div><div class="stat-l">Legendary</div></div>
+      </div>
+      <div class="sec-label"><span class="sec-title">🌸 Seasonal Events</span><span class="sec-count" style="cursor:pointer;color:var(--teal2)" onclick="goScreen('eventsScreen')">View All →</span></div>
+      <div class="events-strip"><div class="events-scroll" id="eventsStrip"></div></div>
+      <div class="capture-banner" onclick="openCamera()">
+        <div class="banner-text"><h3>📸 Spot a Bird!</h3><p>Photograph any bird to add it to your dex</p></div>
+        <div class="cam-fab">🔭</div>
+      </div>
+      <div class="sec-label">
+        <span class="sec-title">📖 My AvianDex</span>
+        <span class="sec-count" id="dexCount">0 species</span>
+      </div>
+      <div class="dex-grid" id="dexGrid">
+        <div class="dex-empty">
+          <span class="dex-empty-ic">🌍</span>
+          <div class="dex-empty-t">Your dex is empty!</div>
+          <div style="font-size:12px;line-height:1.6">Photograph any bird anywhere in the world. Every species you discover is added here permanently.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ CAMERA ══════════ -->
+<div class="screen hidden" id="cameraScreen">
+  <video id="videoEl" autoplay playsinline muted></video>
+  <canvas id="snapCanvas" style="display:none"></canvas>
+
+  <div class="cam-top">
+    <div class="cam-title">📸 Find a Bird</div>
+    <div class="cam-close" onclick="closeCamera()">✕</div>
+  </div>
+
+  <div class="viewfinder">
+    <div class="vf-frame">
+      <div class="vf-c tl"></div><div class="vf-c tr"></div>
+      <div class="vf-c bl"></div><div class="vf-c br"></div>
+      <div class="vf-scan"></div>
+      <div class="vf-hint">Center the bird &amp; tap capture</div>
+    </div>
+  </div>
+
+  <!-- Zoom buttons -->
+  <div class="zoom-controls">
+    <div class="zoom-btn" onclick="zoomIn()">＋</div>
+    <div class="zoom-level" id="zoomDisplay">1×</div>
+    <div class="zoom-btn" onclick="zoomOut()">－</div>
+  </div>
+
+  <!-- Zoom slider -->
+  <div class="zoom-slider-wrap">
+    <span>🔍</span>
+    <input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="1" oninput="setZoom(parseFloat(this.value))">
+    <span id="zoomLabel">1×</span>
+  </div>
+
+  <div class="cam-bottom">
+    <label class="cam-gal" for="galInput" title="Choose from library">🖼️</label>
+    <input type="file" id="galInput" accept="image/*" onchange="handleGallery(event)">
+    <div class="shutter" onclick="capturePhoto()"><div class="shutter-in"></div></div>
+    <div style="width:52px"></div>
+  </div>
+</div>
+
+<!-- ══════════ ANALYZING ══════════ -->
+<div class="screen hidden" id="analyzingScreen">
+  <div class="bg-stars"></div>
+  <div class="az-wrap">
+    <img id="previewImg" src="" alt="your photo">
+    <div class="az-title">Identifying Bird…</div>
+    <div class="az-sub">AI is analyzing your photo</div>
+    <div class="dots"><span></span><span></span><span></span></div>
+  </div>
+</div>
+
+<!-- ══════════ RESULT ══════════ -->
+<div class="screen hidden" id="resultScreen">
+  <div class="scrollable"><div class="res-inner" id="resInner"></div></div>
+</div>
+
+<!-- ══════════ JOURNAL ══════════ -->
+<div class="screen hidden" id="journalScreen">
+  <div class="scrollable">
+    <div class="journal-inner">
+      <div class="topbar" style="padding:18px 0 12px">
+        <div class="logo">📓 Field Journal</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:700" id="journalTotal">0 sightings</div>
+      </div>
+      <div id="journalContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ EVENTS ══════════ -->
+<div class="screen hidden" id="eventsScreen">
+  <div class="scrollable">
+    <div class="events-inner">
+      <div class="topbar" style="padding:18px 0 12px">
+        <div class="logo">🌸 Events</div>
+        <div style="font-size:11px;color:var(--muted);font-weight:700" id="seasonLbl"></div>
+      </div>
+      <div id="eventsContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ PROFILE ══════════ -->
+<div class="screen hidden" id="profileScreen">
+  <div class="scrollable">
+    <div style="position:relative;z-index:1;max-width:440px;margin:0 auto;padding:0 16px 100px">
+      <div class="topbar" style="padding:18px 0 12px">
+        <div class="logo">👤 My Profile</div>
+        <div class="res-back" onclick="goScreen('homeScreen')" style="font-size:14px;cursor:pointer">✕</div>
+      </div>
+      <div id="profileContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav" id="bottomNav">
+  <div class="nav-item active" id="nav-home" onclick="goScreen('homeScreen')"><span class="nav-ic">🏠</span><span class="nav-lb">Home</span></div>
+  <div class="nav-item" id="nav-camera" onclick="openCamera()"><span class="nav-ic">📸</span><span class="nav-lb">Capture</span></div>
+  <div class="nav-item" id="nav-journal" onclick="goScreen('journalScreen')"><span class="nav-ic">📓</span><span class="nav-lb">Journal</span></div>
+  <div class="nav-item" id="nav-events" onclick="goScreen('eventsScreen')"><span class="nav-ic">🌸</span><span class="nav-lb">Events</span></div>
+</nav>
+
+<div class="toast" id="toastEl"><span class="toast-ic" id="toastIc"></span><div><div id="toastTi"></div><div class="toast-sub" id="toastSb"></div></div></div>
+
+<script>
+// ═══════════════════════════════════════════
+// AVATARS & ONBOARDING
+// ═══════════════════════════════════════════
+const AVATARS = ['🦅','🦜','🦉','🐦','🦆','🦩','🦢','🐧','🦚','🦃','🌿','🍃','🌲','🔭','⭐'];
+let selectedAvatar = '';
+
+function buildAvatarGrid() {
+  const g = document.getElementById('avatarGrid');
+  g.innerHTML = AVATARS.map(a => `<div class="av-opt" onclick="pickAvatar('${a}')">${a}</div>`).join('');
+}
+
+function pickAvatar(a) {
+  selectedAvatar = a;
+  // Any avatar can be chosen by anyone — no exclusivity
+  document.querySelectorAll('.av-opt').forEach(el => el.classList.toggle('sel', el.textContent.trim() === a));
+  checkObReady();
+}
+
+function checkObReady() {
+  const name = document.getElementById('nameInput').value.trim();
+  document.getElementById('obBtn').disabled = !(name.length >= 2 && selectedAvatar);
+}
+
+function finishOnboard() {
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name || !selectedAvatar) return;
+  state.profile = { name, avatar: selectedAvatar };
+  save();
+  showScreen('homeScreen');
+  renderHome();
+  setTimeout(() => doToast('🦅', `Welcome, ${name}!`, 'Photograph your first bird to start your dex!'), 600);
+}
+
+// ═══════════════════════════════════════════
+// LEVELS
+// ═══════════════════════════════════════════
+const LEVELS = [
+  {level:1, title:'Fledgling',    xp:0},
+  {level:2, title:'Nestling',     xp:300},
+  {level:3, title:'Scout',        xp:700},
+  {level:4, title:'Watcher',      xp:1500},
+  {level:5, title:'Birder',       xp:3000},
+  {level:6, title:'Naturalist',   xp:5000},
+  {level:7, title:'Field Expert', xp:8000},
+  {level:8, title:'Ornithologist',xp:12000},
+  {level:9, title:'Master Scout', xp:17000},
+  {level:10,title:'Avian Master', xp:25000},
+];
+
+function getLevel(xp) {
+  let cur = LEVELS[0], nxt = LEVELS[1];
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (xp >= LEVELS[i].xp) { cur = LEVELS[i]; nxt = LEVELS[i+1]||null; break; }
+  }
+  return { cur, nxt };
+}
+
+// ═══════════════════════════════════════════
+// SEASONAL EVENTS
+// ═══════════════════════════════════════════
+const MONTH = new Date().getMonth();
+const SEASON = MONTH>=2&&MONTH<=4?'spring':MONTH>=5&&MONTH<=7?'summer':MONTH>=8&&MONTH<=10?'fall':'winter';
+
+const EVENTS = [
+  {id:'spring', name:'Spring Migration Watch', icon:'🌸', season:'spring', xpMult:2,
+   desc:'Migratory birds are on the move worldwide! Every bird you photograph earns 2× XP during spring migration season.',
+   reward:'Migration Medal + 300 Bonus XP', dates:'Mar 1 – May 31'},
+  {id:'summer', name:'Summer Songbird Sprint',  icon:'☀️', season:'summer', xpMult:2,
+   desc:'Summer brings brilliant colors and song to every continent. Log any bird for 2× XP all season long!',
+   reward:'Songbird Crown + 300 Bonus XP', dates:'Jun 1 – Aug 31'},
+  {id:'fall',   name:'Harvest Flyover',          icon:'🍂', season:'fall',   xpMult:2,
+   desc:'Autumn gatherings of waterfowl, raptors, and shorebirds fill the skies. 2× XP on every sighting!',
+   reward:'Harvest Scout Badge + 300 Bonus XP', dates:'Sep 1 – Nov 30'},
+  {id:'winter', name:'Winter Raptor Hunt',       icon:'❄️', season:'winter', xpMult:3,
+   desc:'Raptors and owls are most visible in winter. Legendary birds earn 3× XP — get out and look up!',
+   reward:'Frost Warden Title + 500 Bonus XP', dates:'Dec 1 – Feb 28'},
+];
+const ACTIVE_EVENT = EVENTS.find(e => e.season === SEASON);
+const RARITY_IC = {common:'🟢', rare:'🟣', legendary:'⭐'};
+
+// ═══════════════════════════════════════════
+// STATE  — fully dynamic dex
+// ═══════════════════════════════════════════
+let state = {
+  profile: JSON.parse(localStorage.getItem('ad_profile') || 'null'),
+  dex:     JSON.parse(localStorage.getItem('ad_dex')     || '[]'),
+  xp:      parseInt(localStorage.getItem('ad_xp')        || '0'),
+  streak:  parseInt(localStorage.getItem('ad_streak')    || '0'),
+  photos:  JSON.parse(localStorage.getItem('ad_photos')  || '{}'),
+  journal: JSON.parse(localStorage.getItem('ad_journal') || '[]'),
+  _lastId: null,
+};
+
+function save() {
+  localStorage.setItem('ad_profile', JSON.stringify(state.profile));
+  localStorage.setItem('ad_dex',     JSON.stringify(state.dex));
+  localStorage.setItem('ad_xp',      String(state.xp));
+  localStorage.setItem('ad_streak',  String(state.streak));
+  localStorage.setItem('ad_photos',  JSON.stringify(state.photos));
+  localStorage.setItem('ad_journal', JSON.stringify(state.journal));
+}
+
+// ═══════════════════════════════════════════
+// RENDER HOME
+// ═══════════════════════════════════════════
+function renderHome() {
+  // Always re-read profile from localStorage to catch updates
+  const saved = localStorage.getItem('ad_profile');
+  if (saved) state.profile = JSON.parse(saved);
+  const p = state.profile || {name:'Scout', avatar:'🌿'};
+  const legendary = state.dex.filter(b => b.rarity==='legendary').length;
+  const { cur, nxt } = getLevel(state.xp);
+  const pct = nxt ? Math.min(((state.xp - cur.xp)/(nxt.xp - cur.xp))*100, 100) : 100;
+
+  document.getElementById('profileAv').textContent   = p.avatar;
+  document.getElementById('profileName').textContent = p.name;
+  document.getElementById('profileName').style.color = 'var(--teal2)';
+  document.getElementById('profileName').style.fontWeight = '900';
+  document.getElementById('profileLvl').textContent  = `${cur.title} Lv.${cur.level}`;
+  document.getElementById('caughtCt').textContent    = state.dex.length;
+  document.getElementById('streakCt').textContent    = state.streak;
+  document.getElementById('legendCt').textContent    = legendary;
+  document.getElementById('xpVal').textContent       = nxt ? `${state.xp.toLocaleString()} / ${nxt.xp.toLocaleString()} XP` : `${state.xp.toLocaleString()} XP ★ MAX`;
+  document.getElementById('xpFill').style.width      = pct + '%';
+  document.getElementById('dexCount').textContent    = `${state.dex.length} species discovered`;
+
+  renderEventsStrip();
+  renderDex();
+}
+
+// ═══════════════════════════════════════════
+// DYNAMIC DEX — grows with every new catch
+// ═══════════════════════════════════════════
+function renderDex() {
+  const grid = document.getElementById('dexGrid');
+  if (state.dex.length === 0) {
+    grid.innerHTML = `<div class="dex-empty"><span class="dex-empty-ic">🌍</span><div class="dex-empty-t">Your dex is empty!</div><div style="font-size:12px;line-height:1.6">Photograph any bird anywhere in the world. Every new species you discover is permanently added here.</div></div>`;
+    return;
+  }
+
+  // Sort: legendary → rare → common, newest first within each tier
+  const sorted = [...state.dex].sort((a,b) => {
+    const rv = {legendary:0, rare:1, common:2};
+    if (rv[a.rarity] !== rv[b.rarity]) return rv[a.rarity] - rv[b.rarity];
+    return new Date(b.firstCaught) - new Date(a.firstCaught);
+  });
+
+  grid.innerHTML = sorted.map((b, i) => {
+    const thumb = state.photos[b.id];
+    const isNew = b.id === state._lastId;
+    return `<div class="dex-card ${b.rarity==='legendary'?'leg-card':''}" onclick="viewDexEntry('${b.id}')">
+      ${isNew ? '<div class="new-badge">NEW!</div>' : ''}
+      <div class="dc-num">#${String(i+1).padStart(3,'0')}</div>
+      <div class="dc-rar">${RARITY_IC[b.rarity]}</div>
+      <span class="dc-em">${b.emoji}</span>
+      <div class="dc-nm">${b.name}</div>
+      <div class="dc-st">✅ Photographed</div>
+      <div class="dc-ck">✓</div>
+      ${thumb ? `<img class="dc-ph" src="${thumb}" alt="">` : ''}
+    </div>`;
+  }).join('');
+}
+
+function viewDexEntry(id) {
+  const bird = state.dex.find(b => b.id === id);
+  if (!bird) return;
+  showResultScreen({ bird, alreadyCaught:true, confidence:null, photoSrc: state.photos[id]||null });
+}
+
+// ═══════════════════════════════════════════
+// EVENTS
+// ═══════════════════════════════════════════
+function renderEventsStrip() {
+  const strip = document.getElementById('eventsStrip');
+  strip.innerHTML = EVENTS.map(ev => {
+    const isActive = ev.season === SEASON;
+    return `<div class="event-card ${isActive?'ev-active':'ev-upcoming'}" onclick="goScreen('eventsScreen')">
+      <span class="ev-badge ${isActive?'live':'soon'}">${isActive?'🔴 LIVE NOW':'🔵 UPCOMING'}</span>
+      <span class="ev-icon">${ev.icon}</span>
+      <div class="ev-name">${ev.name}</div>
+      <div class="ev-desc">${ev.desc.substring(0,55)}…</div>
+      <div class="ev-bonus">${ev.xpMult}× XP this season!</div>
+      <div class="ev-timer">${ev.dates}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderEvents() {
+  document.getElementById('seasonLbl').textContent = SEASON.charAt(0).toUpperCase()+SEASON.slice(1)+' Season';
+  document.getElementById('eventsContent').innerHTML = EVENTS.map(ev => {
+    const isActive = ev.season === SEASON;
+    return `<div class="evf-card">
+      <div class="evf-hero ${isActive?'ah':'uh'}">${ev.icon}</div>
+      <div class="evf-body">
+        <div class="evf-top"><div class="evf-name">${ev.name}</div><span class="ev-badge ${isActive?'live':'soon'}">${isActive?'🔴 Live':'🔵 Soon'}</span></div>
+        <div class="evf-desc">${ev.desc}</div>
+        <div class="evf-dates">📅 ${ev.dates}</div>
+        <div class="evf-rewards">
+          <div class="evf-rew"><span class="evf-rew-ic">${ev.xpMult}×</span><div class="evf-rew-lbl">XP Multiplier</div><div class="evf-rew-val">All Birds</div></div>
+          <div class="evf-rew"><span class="evf-rew-ic">🏅</span><div class="evf-rew-lbl">Reward</div><div class="evf-rew-val" style="font-size:11px">${ev.reward}</div></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// JOURNAL
+// ═══════════════════════════════════════════
+function renderJournal() {
+  const el = document.getElementById('journalContent');
+  document.getElementById('journalTotal').textContent = `${state.journal.length} sightings`;
+  if (state.journal.length === 0) {
+    el.innerHTML = `<div class="journal-empty"><span class="journal-empty-em">📓</span><div style="font-family:'Righteous',cursive;font-size:18px;color:var(--teal2);margin-bottom:8px">No sightings yet!</div><div style="font-size:13px;color:var(--muted)">Every bird you photograph appears here with your photo, species info, and fun facts.</div></div>`;
+    return;
+  }
+  const groups = {};
+  [...state.journal].reverse().forEach(e => {
+    const key = new Date(e.date).toLocaleString('default',{month:'long',year:'numeric'});
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(e);
+  });
+  let html = '';
+  for (const [month, entries] of Object.entries(groups)) {
+    html += `<div class="month-div"><span>${month}</span></div>`;
+    entries.forEach(e => {
+      const tc = {common:'jt-com',rare:'jt-rare',legendary:'jt-leg'}[e.rarity]||'jt-com';
+      const ds = new Date(e.date).toLocaleDateString('default',{weekday:'short',month:'short',day:'numeric'});
+      html += `<div class="journal-entry">
+        ${e.photo ? `<img class="je-photo" src="${e.photo}" alt="${e.name}" loading="lazy">` : `<div class="je-placeholder">${e.emoji}</div>`}
+        <div class="je-body">
+          <div class="je-top">
+            <div>
+              <div class="je-name">${e.emoji} ${e.name}</div>
+              ${e.sci ? `<div style="font-size:11px;color:var(--muted);font-style:italic">${e.sci}</div>` : ''}
+            </div>
+            <div class="je-date">${ds}</div>
+          </div>
+          <div class="je-tags">
+            <span class="je-tag ${tc}">${RARITY_IC[e.rarity]} ${e.rarity}</span>
+            ${e.habitat ? `<span class="je-tag jt-com">🌿 ${e.habitat}</span>` : ''}
+            ${e.region  ? `<span class="je-tag jt-com">🌍 ${e.region}</span>` : ''}
+            ${e.eventName ? `<span class="je-tag jt-leg">🌸 ${e.eventName}</span>` : ''}
+          </div>
+          <div class="je-xp">+${e.xpEarned} XP${e.xpMult>1?` (${e.xpMult}× bonus!)`:''}</div>
+          ${e.fact ? `<div class="je-fact">${e.fact}</div>` : ''}
+        </div>
+      </div>`;
+    });
+  }
+  el.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════
+// PROFILE SCREEN
+// ═══════════════════════════════════════════
+function renderProfile() {
+  const p = state.profile || {name:'Scout', avatar:'🌿'};
+  const { cur } = getLevel(state.xp);
+  const legendary = state.dex.filter(b=>b.rarity==='legendary').length;
+  const rare      = state.dex.filter(b=>b.rarity==='rare').length;
+  document.getElementById('profileContent').innerHTML = `
+    <div style="text-align:center;padding:24px 0 32px">
+      <div style="font-size:72px;margin-bottom:8px">${p.avatar}</div>
+      <div style="font-family:'Righteous',cursive;font-size:24px;color:var(--teal2)">${p.name}</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px">${cur.title} • Level ${cur.level}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px">
+      <div class="stat" style="border-radius:16px"><div class="stat-ic">🦜</div><div class="stat-n">${state.dex.length}</div><div class="stat-l">Species Found</div></div>
+      <div class="stat" style="border-radius:16px"><div class="stat-ic">⭐</div><div class="stat-n">${legendary}</div><div class="stat-l">Legendary</div></div>
+      <div class="stat" style="border-radius:16px"><div class="stat-ic">🟣</div><div class="stat-n">${rare}</div><div class="stat-l">Rare</div></div>
+      <div class="stat" style="border-radius:16px"><div class="stat-ic">🔥</div><div class="stat-n">${state.streak}</div><div class="stat-l">Day Streak</div></div>
+    </div>
+    <div style="font-family:'Righteous',cursive;font-size:13px;color:var(--teal2);margin-bottom:10px">⚡ Total XP: ${state.xp.toLocaleString()}</div>
+    <button onclick="resetProfile()" style="width:100%;padding:14px;border:1px solid rgba(255,107,107,.3);border-radius:14px;background:rgba(255,107,107,.08);color:var(--coral);font-family:'Righteous',cursive;font-size:14px;cursor:pointer;margin-top:8px">Reset My Profile</button>`;
+}
+
+function resetProfile() {
+  if (!confirm('Reset everything? This clears your dex, journal, and XP.')) return;
+  localStorage.clear();
+  location.reload();
+}
+
+// ═══════════════════════════════════════════
+// CAMERA + ZOOM
+// ═══════════════════════════════════════════
+let stream = null;
+let currentZoom = 1;
+let maxZoom = 5;
+
+async function openCamera() {
+  showScreen('cameraScreen');
+  document.getElementById('bottomNav').classList.add('hidden');
+  currentZoom = 1;
+  updateZoomUI(1);
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode:'environment', width:{ideal:1920}, height:{ideal:1080} }
+    });
+    const video = document.getElementById('videoEl');
+    video.srcObject = stream;
+
+    // Check native zoom support
+    const track = stream.getVideoTracks()[0];
+    const caps  = track.getCapabilities ? track.getCapabilities() : {};
+    if (caps.zoom) {
+      maxZoom = Math.min(caps.zoom.max, 10);
+      document.getElementById('zoomSlider').max = maxZoom;
+    }
+  } catch(e) {
+    doToast('📷','No camera found','Use 🖼️ to upload a photo from your library');
+  }
+}
+
+async function setZoom(val) {
+  currentZoom = Math.max(1, Math.min(val, maxZoom));
+  updateZoomUI(currentZoom);
+  if (!stream) return;
+  const track = stream.getVideoTracks()[0];
+  if (track.getCapabilities && track.getCapabilities().zoom) {
+    try { await track.applyConstraints({advanced:[{zoom:currentZoom}]}); } catch(e){}
+  } else {
+    // Fallback: CSS scale on video
+    const video = document.getElementById('videoEl');
+    video.style.transform = `scale(${currentZoom})`;
+    video.style.transformOrigin = 'center center';
+  }
+}
+
+function updateZoomUI(val) {
+  const disp = val % 1 === 0 ? val+'×' : val.toFixed(1)+'×';
+  document.getElementById('zoomDisplay').textContent = disp;
+  document.getElementById('zoomLabel').textContent   = disp;
+  document.getElementById('zoomSlider').value        = val;
+}
+
+function zoomIn()  { setZoom(Math.min(currentZoom + 0.5, maxZoom)); }
+function zoomOut() { setZoom(Math.max(currentZoom - 0.5, 1)); }
+
+// Pinch-to-zoom on video
+let pinchDist0 = null;
+let pinchZoom0 = 1;
+const videoEl = document.getElementById('videoEl');
+videoEl.addEventListener('touchstart', e => {
+  if (e.touches.length === 2) {
+    pinchDist0 = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    pinchZoom0 = currentZoom;
+  }
+});
+videoEl.addEventListener('touchmove', e => {
+  if (e.touches.length === 2 && pinchDist0) {
+    const dist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    setZoom(pinchZoom0 * (dist/pinchDist0));
+    e.preventDefault();
+  }
+},{passive:false});
+videoEl.addEventListener('touchend', () => { pinchDist0 = null; });
+
+function closeCamera() { stopStream(); showScreen('homeScreen'); document.getElementById('bottomNav').classList.remove('hidden'); }
+function stopStream() {
+  if (stream) { stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  // Reset video scale
+  const v = document.getElementById('videoEl');
+  v.style.transform = ''; v.style.transformOrigin = '';
+}
+
+function capturePhoto() {
+  const v = document.getElementById('videoEl');
+  const c = document.getElementById('snapCanvas');
+  const vw = v.videoWidth  || 1280;
+  const vh = v.videoHeight || 720;
+  c.width  = vw;
+  c.height = vh;
+  const ctx = c.getContext('2d');
+
+  // Always crop the center zoomed region so distant birds are enlarged for AI
+  const zoom = Math.max(currentZoom, 1);
+  const sw = vw / zoom;
+  const sh = vh / zoom;
+  const sx = (vw - sw) / 2;
+  const sy = (vh - sh) / 2;
+  ctx.drawImage(v, sx, sy, sw, sh, 0, 0, vw, vh);
+
+  stopStream();
+  // Use high quality for better AI recognition
+  analyzePhoto(c.toDataURL('image/jpeg', 0.95));
+}
+
+function handleGallery(e) {
+  const file = e.target.files[0]; if(!file) return;
+  const r = new FileReader();
+  r.onload = ev => analyzePhoto(ev.target.result);
+  r.readAsDataURL(file);
+  e.target.value = '';
+}
+
+// ═══════════════════════════════════════════
+// AI — calls Anthropic API directly
+// ═══════════════════════════════════════════
+
+
+async function analyzePhoto(dataUrl) {
+  document.getElementById('previewImg').src = dataUrl;
+  showScreen('analyzingScreen');
+  document.getElementById('bottomNav').classList.add('hidden');
+
+  const base64    = dataUrl.split(',')[1];
+  const mediaType = dataUrl.match(/data:([^;]+)/)[1];
+
+  let result;
+  try {
+    const resp = await fetch('/.netlify/functions/identify-bird', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        
+        
+        
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: [
+            { type:'image', source:{ type:'base64', media_type:mediaType, data:base64 } },
+            { type:'text',  text:`You are an expert ornithologist AI for AvianDex, a global birdwatching game. Users photograph real birds anywhere in the world.
+
+IMPORTANT: Look very carefully at the image. If there is ANY bird visible — even partially, even in the background, even small — identify it.
+
+Respond ONLY with a valid JSON object. No markdown, no code blocks, no explanation. Start your response with { and end with }.
+
+If ANY bird is detected:
+{"is_bird":true,"common_name":"Northern Cardinal","scientific_name":"Cardinalis cardinalis","confidence":94,"rarity":"common","habitat":"Woodland edges and gardens","diet":"Seeds and insects","fun_fact":"2-3 interesting sentences about this species.","xp":75,"region":"North America"}
+
+Rarity: "common"=everyday birds, "rare"=regional specialists, "legendary"=eagles/owls/parrots/flamingos/toucans/cranes/puffins.
+XP: common=40-100, rare=150-300, legendary=400-600.
+
+If NO bird at all: {"is_bird":false,"what_it_is":"describe what you see"}` }
+          ]
+        }]
+      })
+    });
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      console.error('API error:', resp.status, errText);
+      result = { is_bird:false, what_it_is:`API error (${resp.status}). Please try again.` };
+    } else {
+      const data = await resp.json();
+      if (data.error) {
+        console.error('API error:', data.error);
+        result = { is_bird:false, what_it_is:'AI service error. Please try again in a moment.' };
+      } else {
+        const text = data.content?.find(c => c.type==='text')?.text || '';
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          result = JSON.parse(jsonMatch[0]);
+        } else {
+          result = { is_bird:false, what_it_is:'Could not parse AI response. Please try again.' };
+        }
+      }
+    }
+  } catch(err) {
+    console.error('AI error:', err);
+    result = { is_bird:false, what_it_is:'Connection error. Please check your internet and try again.' };
+  }
+
+  showResultScreen({ bird:result, alreadyCaught:false, confidence:result.confidence, photoSrc:dataUrl });
+}
+
+// ═══════════════════════════════════════════
+// RESULT SCREEN
+// ═══════════════════════════════════════════
+function showResultScreen({ bird, alreadyCaught, confidence, photoSrc }) {
+  const el = document.getElementById('resInner');
+
+  if (!bird || bird.is_bird === false) {
+    el.innerHTML = `
+      <div class="res-header"><div class="res-back" onclick="backToCam()">←</div><div class="res-heading">AvianDex Scanner</div><div style="width:38px"></div></div>
+      <div class="not-bird">
+        <span class="nb-em">🔍</span>
+        <div class="nb-ti">No Bird Detected</div>
+        <div class="nb-sub" style="margin-bottom:8px">The AI saw: <strong style="color:var(--text)">${bird?.what_it_is||'something else'}</strong></div>
+        <div class="nb-sub">Tips: Make sure the bird fills the frame, has good lighting, and isn't blurry. Use the zoom to get closer!</div>
+        <div style="height:28px"></div>
+        <button class="res-btn pri" onclick="backToCam()">📸 Try Again</button>
+        <button class="res-btn sec" onclick="goHome()">🏠 Home</button>
+      </div>`;
+    showScreen('resultScreen');
+    return;
+  }
+
+  // Check if already in dex
+  const existing = state.dex.find(b =>
+    (bird.scientific_name && b.sci && b.sci.toLowerCase() === bird.scientific_name.toLowerCase()) ||
+    (bird.common_name && b.name.toLowerCase() === bird.common_name.toLowerCase())
+  );
+  const isCaught = !!existing;
+  const conf     = confidence || bird.confidence || 88;
+  const xpMult   = (!isCaught && ACTIVE_EVENT) ? ACTIVE_EVENT.xpMult : 1;
+  const finalXp  = (bird.xp || 80) * xpMult;
+  const emoji    = rarityEmoji(bird.rarity || 'common');
+
+  window._pending = { bird, emoji, photoSrc, xpMult, finalXp };
+
+  el.innerHTML = `
+    <div class="res-header"><div class="res-back" onclick="backToCam()">←</div><div class="res-heading">Bird Identified! 🎉</div><div style="width:38px"></div></div>
+    <div class="bird-hero">
+      ${photoSrc ? `<img src="${photoSrc}" alt="your bird photo">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:80px">${emoji}</div>`}
+      <div class="hero-overlay">
+        <span class="res-em">${emoji}</span>
+        <div class="res-nm">${bird.common_name || 'Unknown Bird'}</div>
+        <div class="res-sci">${bird.scientific_name || ''}</div>
+      </div>
+    </div>
+
+    <div class="res-tags">
+      <span class="rtag rt-${bird.rarity||'common'}">${RARITY_IC[bird.rarity||'common']} ${bird.rarity||'common'}</span>
+      ${bird.habitat ? `<span class="rtag rt-hab">🌿 ${bird.habitat}</span>` : ''}
+      ${bird.diet    ? `<span class="rtag rt-diet">🍽 ${bird.diet}</span>` : ''}
+      ${bird.region  ? `<span class="rtag rt-region">🌍 ${bird.region}</span>` : ''}
+    </div>
+
+    ${isCaught ? `<div class="already-banner">✅ Already in your AvianDex! You've photographed this species before.</div>` : ''}
+
+    ${!isCaught ? `
+      ${ACTIVE_EVENT ? `<div class="ev-bonus-banner">🌸 ${ACTIVE_EVENT.name} — ${xpMult}× XP active!</div>` : ''}
+      <div class="xp-banner">
+        <div>
+          <div class="xp-lbl2">XP Reward</div>
+          <div class="xp-amt">+${finalXp} XP${xpMult>1?` <span style="font-size:14px;color:var(--coral)">(${xpMult}×)</span>`:''}
+          </div>
+        </div>
+        <div style="font-size:40px">${RARITY_IC[bird.rarity||'common']}</div>
+      </div>` : ''}
+
+    <div class="conf-wrap">
+      <div class="conf-lbl"><span>🎯 AI Confidence</span><span style="color:var(--green)">${conf}%</span></div>
+      <div class="conf-track"><div class="conf-fill" id="confFill" style="width:0%"></div></div>
+    </div>
+
+    <div class="fact-card">
+      <div class="fact-hd">💡 Field Notes</div>
+      <div class="fact-bd">${bird.fun_fact || 'A remarkable bird worth knowing!'}</div>
+    </div>
+
+    ${!isCaught
+      ? `<button class="res-btn pri" onclick="logBird()">✅ Add to My AvianDex!</button>`
+      : ''}
+    <button class="res-btn sec" onclick="backToCam()">📸 Scan Another Bird</button>
+    <button class="res-btn sec" style="margin-top:0" onclick="goHome()">🏠 Back to Home</button>`;
+
+  showScreen('resultScreen');
+  setTimeout(() => { const f=document.getElementById('confFill'); if(f) f.style.width=conf+'%'; }, 400);
+}
+
+function rarityEmoji(r) { return r==='legendary'?'🦅':r==='rare'?'🦉':'🐦'; }
+
+// ═══════════════════════════════════════════
+// LOG BIRD — adds to dynamic dex
+// ═══════════════════════════════════════════
+function logBird() {
+  const p = window._pending;
+  if (!p) return;
+  const { bird, emoji, photoSrc, xpMult, finalXp } = p;
+
+  const dexId = `bird_${Date.now()}_${Math.random().toString(36).substr(2,6)}`;
+  const entry = {
+    id:          dexId,
+    name:        bird.common_name || 'Unknown Bird',
+    sci:         bird.scientific_name || '',
+    emoji,
+    rarity:      bird.rarity || 'common',
+    habitat:     bird.habitat || '',
+    diet:        bird.diet || '',
+    fact:        bird.fun_fact || '',
+    xp:          bird.xp || 80,
+    region:      bird.region || '',
+    firstCaught: new Date().toISOString(),
+  };
+
+  state.dex.push(entry);
+  state.xp      += finalXp;
+  state.streak   = (state.streak||0) + 1;
+  state._lastId  = dexId;
+
+  // Save thumbnail photo
+  if (photoSrc) state.photos[dexId] = photoSrc;
+
+  // Journal entry
+  state.journal.push({
+    dexId,
+    name:      entry.name,
+    sci:       entry.sci,
+    emoji,
+    rarity:    entry.rarity,
+    habitat:   entry.habitat,
+    region:    entry.region,
+    fact:      entry.fact,
+    xpEarned:  finalXp,
+    xpMult,
+    photo:     photoSrc,
+    date:      new Date().toISOString(),
+    eventName: ACTIVE_EVENT ? ACTIVE_EVENT.name : null,
+  });
+
+  save();
+  spawnConfetti();
+
+  const msgs = { legendary:'🌟 LEGENDARY CATCH!', rare:'💜 Rare Discovery!', common:'✅ New Species!' };
+  doToast(emoji, msgs[entry.rarity]||'Added!', `${entry.name} • +${finalXp} XP`);
+  setTimeout(goHome, 1400);
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+const ALL_SCREENS = ['onboardScreen','homeScreen','cameraScreen','analyzingScreen','resultScreen','journalScreen','eventsScreen','profileScreen'];
+const NAV_MAP = { homeScreen:'nav-home', journalScreen:'nav-journal', eventsScreen:'nav-events' };
+
+function showScreen(id) {
+  ALL_SCREENS.forEach(s => document.getElementById(s).classList.toggle('hidden', s!==id));
+  const hideNav = ['cameraScreen','analyzingScreen','onboardScreen'].includes(id);
+  document.getElementById('bottomNav').classList.toggle('hidden', hideNav);
+  Object.values(NAV_MAP).forEach(n => document.getElementById(n)?.classList.remove('active'));
+  if (NAV_MAP[id]) document.getElementById(NAV_MAP[id]).classList.add('active');
+}
+
+function goScreen(id) {
+  if (id==='journalScreen') renderJournal();
+  if (id==='eventsScreen')  renderEvents();
+  if (id==='profileScreen') renderProfile();
+  showScreen(id);
+}
+
+function backToCam() { openCamera(); }
+function goHome() { stopStream(); renderHome(); showScreen('homeScreen'); }
+
+// ═══════════════════════════════════════════
+// TOAST & CONFETTI
+// ═══════════════════════════════════════════
+let toastTimer;
+function doToast(ic, title, sub) {
+  clearTimeout(toastTimer);
+  document.getElementById('toastIc').textContent = ic;
+  document.getElementById('toastTi').textContent = title;
+  document.getElementById('toastSb').textContent = sub;
+  const t = document.getElementById('toastEl');
+  t.classList.add('show');
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 3500);
+}
+
+function spawnConfetti() {
+  const cols=['#00d4b4','#f7c948','#a78bfa','#ff6b6b','#3dffa0'];
+  for(let i=0;i<30;i++){
+    const p=document.createElement('div');
+    p.className='confetti';
+    p.style.cssText=`left:${15+Math.random()*70}%;background:${cols[i%cols.length]};animation-delay:${Math.random()*.5}s;animation-duration:${1.2+Math.random()*.8}s`;
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(),2500);
+  }
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+buildAvatarGrid();
+
+if (state.profile) {
+  showScreen('homeScreen');
+  renderHome();
+  setTimeout(() => {
+    const ev = ACTIVE_EVENT;
+    doToast(ev?.icon||'🦅', `Welcome back, ${state.profile.name}!`, ev ? `${ev.name} is live — ${ev.xpMult}× XP!` : 'Go find some birds! 🌍');
+  }, 600);
+} else {
+  showScreen('onboardScreen');
+}
+</script>
+</body>
+</html>
