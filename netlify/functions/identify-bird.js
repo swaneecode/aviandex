@@ -15,14 +15,18 @@ exports.handler = async (event) => {
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: 'API key not configured' }) };
+    return { 
+      statusCode: 500, 
+      headers, 
+      body: JSON.stringify({ error: 'API key not configured. Add ANTHROPIC_API_KEY to Netlify environment variables.' }) 
+    };
   }
 
   let parsed;
   try {
     parsed = JSON.parse(event.body);
   } catch (e) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Bad request body' }) };
+    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid JSON body' }) };
   }
 
   try {
@@ -40,9 +44,23 @@ exports.handler = async (event) => {
       }),
     });
 
-    const data = await res.json();
-    return { statusCode: 200, headers, body: JSON.stringify(data) };
+    const responseText = await res.text();
+    
+    if (!res.ok) {
+      return { 
+        statusCode: res.status, 
+        headers, 
+        body: JSON.stringify({ error: `Anthropic API error ${res.status}: ${responseText}` }) 
+      };
+    }
+
+    return { statusCode: 200, headers, body: responseText };
+
   } catch (err) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
+    return { 
+      statusCode: 500, 
+      headers, 
+      body: JSON.stringify({ error: `Function error: ${err.message}` }) 
+    };
   }
 };
