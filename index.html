@@ -591,7 +591,20 @@ function renderDex() {
 function viewDexEntry(id) {
   const bird = state.dex.find(b => b.id === id);
   if (!bird) return;
-  showResultScreen({ bird, alreadyCaught:true, confidence:null, photoSrc: state.photos[id]||null });
+  // Map dex fields to the format showResultScreen expects
+  const birdForDisplay = {
+    is_bird: true,
+    common_name: bird.name,
+    scientific_name: bird.sci,
+    rarity: bird.rarity,
+    habitat: bird.habitat,
+    diet: bird.diet,
+    fun_fact: bird.fact,
+    xp: bird.xp,
+    region: bird.region,
+    confidence: 99,
+  };
+  showResultScreen({ bird: birdForDisplay, alreadyCaught:true, confidence:99, photoSrc: state.photos[id]||null });
 }
 
 // ═══════════════════════════════════════════
@@ -721,11 +734,18 @@ async function openCamera() {
   currentZoom = 1;
   updateZoomUI(1);
   try {
+    // Use simpler constraints for better iPhone compatibility
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode:'environment', width:{ideal:1920}, height:{ideal:1080} }
+      video: {
+        facingMode: { ideal: 'environment' },
+        width:  { ideal: 1280 },
+        height: { ideal: 720 },
+      }
     });
     const video = document.getElementById('videoEl');
     video.srcObject = stream;
+    // Must call play() explicitly on iOS
+    await video.play().catch(() => {});
 
     // Check native zoom support
     const track = stream.getVideoTracks()[0];
@@ -735,7 +755,8 @@ async function openCamera() {
       document.getElementById('zoomSlider').max = maxZoom;
     }
   } catch(e) {
-    doToast('📷','No camera found','Use 🖼️ to upload a photo from your library');
+    console.error('Camera error:', e);
+    doToast('📷','Camera error: ' + e.message,'Use 🖼️ to upload a photo instead');
   }
 }
 
@@ -793,9 +814,14 @@ function stopStream() {
 
 function capturePhoto() {
   const v = document.getElementById('videoEl');
+  // Don't capture if video isn't ready yet
+  if (!v.videoWidth || v.readyState < 2) {
+    doToast('📷','Camera loading…','Wait a moment then tap again');
+    return;
+  }
   const c = document.getElementById('snapCanvas');
-  const vw = v.videoWidth  || 1280;
-  const vh = v.videoHeight || 720;
+  const vw = v.videoWidth;
+  const vh = v.videoHeight;
   c.width  = vw;
   c.height = vh;
   const ctx = c.getContext('2d');
