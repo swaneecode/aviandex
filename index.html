@@ -591,7 +591,7 @@ function renderDex() {
 function viewDexEntry(id) {
   const bird = state.dex.find(b => b.id === id);
   if (!bird) return;
-  // Map dex fields to the format showResultScreen expects
+  window._pending = { existingId: id };
   const birdForDisplay = {
     is_bird: true,
     common_name: bird.name,
@@ -972,6 +972,7 @@ function showResultScreen({ bird, alreadyCaught, confidence, photoSrc }) {
     (bird.common_name && b.name.toLowerCase() === bird.common_name.toLowerCase())
   );
   const isCaught = !!existing;
+  if (existing) window._pending = { ...(window._pending||{}), existingId: existing.id };
   const conf     = confidence || bird.confidence || 88;
   const xpMult   = (!isCaught && ACTIVE_EVENT) ? ACTIVE_EVENT.xpMult : 1;
   const finalXp  = (bird.xp || 80) * xpMult;
@@ -1022,7 +1023,7 @@ function showResultScreen({ bird, alreadyCaught, confidence, photoSrc }) {
 
     ${!isCaught
       ? `<button class="res-btn pri" onclick="logBird()">✅ Add to My AvianDex!</button>`
-      : ''}
+      : `<button class="res-btn sec" style="color:var(--coral);border-color:rgba(255,107,107,.3)" onclick="deleteBirdPrompt('${window._pending?.existingId||''}')">🗑️ Remove from My Dex</button>`}
     <button class="res-btn sec" onclick="backToCam()">📸 Scan Another Bird</button>
     <button class="res-btn sec" style="margin-top:0" onclick="goHome()">🏠 Back to Home</button>`;
 
@@ -1086,6 +1087,39 @@ function logBird() {
   const msgs = { legendary:'🌟 LEGENDARY CATCH!', rare:'💜 Rare Discovery!', common:'✅ New Species!' };
   doToast(emoji, msgs[entry.rarity]||'Added!', `${entry.name} • +${finalXp} XP`);
   setTimeout(goHome, 1400);
+}
+
+// ═══════════════════════════════════════════
+// DELETE BIRD FROM DEX
+// ═══════════════════════════════════════════
+function deleteBirdPrompt(id) {
+  const resolvedId = id || (window._pending && window._pending.existingId);
+  if (!resolvedId) {
+    doToast('❌', 'Error', 'Could not find bird to delete');
+    return;
+  }
+  const bird = state.dex.find(b => b.id === resolvedId);
+  if (!bird) {
+    doToast('❌', 'Not found', 'This bird is not in your dex');
+    return;
+  }
+  if (confirm(`Remove ${bird.name} from your AvianDex?
+
+This will delete it from your dex and journal. This cannot be undone.`)) {
+    deleteBird(resolvedId, bird.name);
+  }
+}
+
+function deleteBird(id, name) {
+  // Remove from dex
+  state.dex = state.dex.filter(b => b.id !== id);
+  // Remove photo
+  delete state.photos[id];
+  // Remove journal entries for this bird
+  state.journal = state.journal.filter(e => e.dexId !== id);
+  save();
+  doToast('🗑️', `${name} removed`, 'Deleted from your dex and journal');
+  goHome();
 }
 
 // ═══════════════════════════════════════════
