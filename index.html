@@ -592,6 +592,7 @@ function viewDexEntry(id) {
   const bird = state.dex.find(b => b.id === id);
   if (!bird) return;
   window._pending = { existingId: id };
+  window._viewingDexId = id;  // store directly as backup
   const birdForDisplay = {
     is_bird: true,
     common_name: bird.name,
@@ -1023,7 +1024,7 @@ function showResultScreen({ bird, alreadyCaught, confidence, photoSrc }) {
 
     ${!isCaught
       ? `<button class="res-btn pri" onclick="logBird()">✅ Add to My AvianDex!</button>`
-      : `<button class="res-btn sec" style="color:var(--coral);border-color:rgba(255,107,107,.3)" onclick="deleteBirdPrompt('${window._pending?.existingId||''}')">🗑️ Remove from My Dex</button>`}
+      : `<button class="res-btn sec" style="color:var(--coral);border-color:rgba(255,107,107,.3)" onclick="deleteBirdPrompt(window._viewingDexId||'')">🗑️ Remove from My Dex</button>`}
     <button class="res-btn sec" onclick="backToCam()">📸 Scan Another Bird</button>
     <button class="res-btn sec" style="margin-top:0" onclick="goHome()">🏠 Back to Home</button>`;
 
@@ -1093,8 +1094,12 @@ function logBird() {
 // DELETE BIRD FROM DEX
 // ═══════════════════════════════════════════
 function deleteBirdPrompt(id) {
-  const resolvedId = id || (window._pending && window._pending.existingId);
-  if (!resolvedId) {
+  // Try every possible source for the ID
+  const resolvedId = id || 
+    (window._pending && window._pending.existingId) || 
+    window._viewingDexId ||
+    null;
+  if (!resolvedId || resolvedId === 'undefined' || resolvedId === '') {
     doToast('❌', 'Error', 'Could not find bird to delete');
     return;
   }
