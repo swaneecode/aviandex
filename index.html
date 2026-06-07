@@ -116,7 +116,7 @@ html,body{height:100%;overflow:hidden;background:var(--sky);color:var(--text);fo
 .cam-top{position:absolute;top:0;left:0;right:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:16px 20px;background:linear-gradient(to bottom,rgba(0,0,0,.75),transparent)}
 .cam-title{font-family:'Righteous',cursive;font-size:18px;color:var(--teal2)}
 .cam-close{width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;color:#fff}
-#videoEl{width:100%;height:100%;object-fit:cover;display:block;position:absolute;top:0;left:0}
+
 
 /* Viewfinder */
 .viewfinder{position:absolute;inset:0;z-index:5;pointer-events:none;display:flex;align-items:center;justify-content:center}
@@ -139,8 +139,8 @@ html,body{height:100%;overflow:hidden;background:var(--sky);color:var(--text);fo
 /* Zoom slider */
 .zoom-slider-wrap{position:absolute;bottom:140px;left:50%;transform:translateX(-50%);z-index:10;display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.5);padding:8px 16px;border-radius:20px}
 .zoom-slider-wrap span{font-size:11px;color:rgba(255,255,255,.7);font-weight:700;white-space:nowrap}
-#zoomSlider{-webkit-appearance:none;appearance:none;width:140px;height:4px;border-radius:2px;background:rgba(255,255,255,.25);outline:none}
-#zoomSlider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:var(--teal2);cursor:pointer;box-shadow:0 0 8px rgba(0,212,180,.5)}
+
+
 
 .cam-bottom{position:absolute;bottom:0;left:0;right:0;z-index:10;padding:20px 40px 44px;background:linear-gradient(to top,rgba(0,0,0,.85),transparent);display:flex;align-items:center;justify-content:center;gap:40px}
 .cam-gal{width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer}
@@ -320,42 +320,39 @@ html,body{height:100%;overflow:hidden;background:var(--sky);color:var(--text);fo
 
 <!-- ══════════ CAMERA ══════════ -->
 <div class="screen hidden" id="cameraScreen">
-  <video id="videoEl" autoplay playsinline muted></video>
+  <input type="file" id="nativeCameraInput" accept="image/*" capture="environment"
+    onchange="handleNativeCapture(event)" style="display:none">
+  <input type="file" id="galInput" accept="image/*"
+    onchange="handleGallery(event)" style="display:none">
   <canvas id="snapCanvas" style="display:none"></canvas>
 
-  <div class="cam-top">
-    <div class="cam-title">📸 Find a Bird</div>
-    <div class="cam-close" onclick="closeCamera()">✕</div>
-  </div>
+  <div class="bg-stars"></div>
+  <div style="position:relative;z-index:1;max-width:440px;margin:0 auto;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;">
 
-  <div class="viewfinder">
-    <div class="vf-frame">
-      <div class="vf-c tl"></div><div class="vf-c tr"></div>
-      <div class="vf-c bl"></div><div class="vf-c br"></div>
-      <div class="vf-scan"></div>
-      <div class="vf-hint">Center the bird &amp; tap capture</div>
+    <div class="cam-close" onclick="closeCamera()" style="position:absolute;top:20px;right:20px">✕</div>
+
+    <div style="font-family:'Righteous',cursive;font-size:28px;background:linear-gradient(130deg,var(--teal),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;text-align:center">📸 Spot a Bird!</div>
+    <div style="font-size:14px;color:var(--muted);text-align:center;margin-bottom:48px;line-height:1.6">Use your phone's own camera for perfect quality.<br>Pinch to zoom before you shoot!</div>
+
+    <label for="nativeCameraInput" style="width:100%;max-width:300px;margin-bottom:16px;cursor:pointer">
+      <div style="background:linear-gradient(135deg,var(--teal),var(--gold));border-radius:20px;padding:20px;text-align:center;box-shadow:0 4px 20px rgba(0,212,180,.3)">
+        <div style="font-size:52px;margin-bottom:8px">📷</div>
+        <div style="font-family:'Righteous',cursive;font-size:20px;color:var(--sky);letter-spacing:1px">Take a Photo</div>
+        <div style="font-size:12px;color:rgba(8,15,26,.7);margin-top:4px">Opens your native camera</div>
+      </div>
+    </label>
+
+    <label for="galInput" style="width:100%;max-width:300px;cursor:pointer">
+      <div style="background:var(--panel);border:1px solid var(--pb);border-radius:20px;padding:16px;text-align:center;">
+        <div style="font-size:36px;margin-bottom:6px">🖼️</div>
+        <div style="font-family:'Righteous',cursive;font-size:16px;color:var(--teal2)">Choose from Library</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">Upload an existing photo</div>
+      </div>
+    </label>
+
+    <div style="margin-top:32px;font-size:11px;color:var(--muted);text-align:center;line-height:1.8">
+      💡 Get close, use good lighting, hold steady!
     </div>
-  </div>
-
-  <!-- Zoom buttons -->
-  <div class="zoom-controls">
-    <div class="zoom-btn" onclick="zoomIn()">＋</div>
-    <div class="zoom-level" id="zoomDisplay">1×</div>
-    <div class="zoom-btn" onclick="zoomOut()">－</div>
-  </div>
-
-  <!-- Zoom slider -->
-  <div class="zoom-slider-wrap">
-    <span>🔍</span>
-    <input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="1" oninput="setZoom(parseFloat(this.value))">
-    <span id="zoomLabel">1×</span>
-  </div>
-
-  <div class="cam-bottom">
-    <label class="cam-gal" for="galInput" title="Choose from library">🖼️</label>
-    <input type="file" id="galInput" accept="image/*" onchange="handleGallery(event)">
-    <div class="shutter" onclick="capturePhoto()"><div class="shutter-in"></div></div>
-    <div style="width:52px"></div>
   </div>
 </div>
 
@@ -723,150 +720,33 @@ function resetProfile() {
 }
 
 // ═══════════════════════════════════════════
-// CAMERA + ZOOM
+// CAMERA — native phone camera
 // ═══════════════════════════════════════════
 let stream = null;
 let currentZoom = 1;
 let maxZoom = 5;
 
-async function openCamera() {
+function openCamera() {
   showScreen('cameraScreen');
   document.getElementById('bottomNav').classList.add('hidden');
-  currentZoom = 1;
-  updateZoomUI(1);
-
-  const video = document.getElementById('videoEl');
-
-  // Reset any previous zoom scaling
-  video.style.transform = '';
-  video.style.transformOrigin = 'center center';
-
-  try {
-    // iOS-friendly constraints — no resolution hints that confuse iPhone
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment' }
-    });
-
-    video.srcObject = stream;
-    video.setAttribute('playsinline', true);
-    video.setAttribute('autoplay', true);
-    video.muted = true;
-
-    // Wait for video to actually be ready before showing
-    await new Promise((resolve) => {
-      video.onloadedmetadata = () => {
-        video.play().then(resolve).catch(resolve);
-      };
-      // Fallback if onloadedmetadata already fired
-      if (video.readyState >= 2) {
-        video.play().then(resolve).catch(resolve);
-      }
-    });
-
-    // Check native zoom support
-    const track = stream.getVideoTracks()[0];
-    const caps  = track.getCapabilities ? track.getCapabilities() : {};
-    if (caps.zoom) {
-      maxZoom = Math.min(caps.zoom.max, 10);
-      document.getElementById('zoomSlider').max = maxZoom;
-    }
-
-  } catch(e) {
-    console.error('Camera error:', e);
-    doToast('📷', 'Camera unavailable', 'Use 🖼️ to upload a photo instead');
-  }
 }
 
-async function setZoom(val) {
-  currentZoom = Math.max(1, Math.min(val, maxZoom));
-  updateZoomUI(currentZoom);
-  if (!stream) return;
-  const track = stream.getVideoTracks()[0];
-  if (track.getCapabilities && track.getCapabilities().zoom) {
-    try { await track.applyConstraints({advanced:[{zoom:currentZoom}]}); } catch(e){}
-  } else {
-    // Fallback: CSS scale on video
-    const video = document.getElementById('videoEl');
-    video.style.transform = `scale(${currentZoom})`;
-    video.style.transformOrigin = 'center center';
-  }
+function closeCamera() {
+  showScreen('homeScreen');
+  document.getElementById('bottomNav').classList.remove('hidden');
 }
 
-function updateZoomUI(val) {
-  const disp = val % 1 === 0 ? val+'×' : val.toFixed(1)+'×';
-  document.getElementById('zoomDisplay').textContent = disp;
-  document.getElementById('zoomLabel').textContent   = disp;
-  document.getElementById('zoomSlider').value        = val;
-}
+function stopStream() { /* no-op with native camera */ }
 
-function zoomIn()  { setZoom(Math.min(currentZoom + 0.5, maxZoom)); }
-function zoomOut() { setZoom(Math.max(currentZoom - 0.5, 1)); }
-
-// Pinch-to-zoom on video
-let pinchDist0 = null;
-let pinchZoom0 = 1;
-const videoEl = document.getElementById('videoEl');
-videoEl.addEventListener('touchstart', e => {
-  if (e.touches.length === 2) {
-    pinchDist0 = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
-    pinchZoom0 = currentZoom;
-  }
-});
-videoEl.addEventListener('touchmove', e => {
-  if (e.touches.length === 2 && pinchDist0) {
-    const dist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
-    setZoom(pinchZoom0 * (dist/pinchDist0));
-    e.preventDefault();
-  }
-},{passive:false});
-videoEl.addEventListener('touchend', () => { pinchDist0 = null; });
-
-function closeCamera() { stopStream(); showScreen('homeScreen'); document.getElementById('bottomNav').classList.remove('hidden'); }
-function stopStream() {
-  if (stream) { stream.getTracks().forEach(t=>t.stop()); stream=null; }
-  // Reset video scale
-  const v = document.getElementById('videoEl');
-  v.style.transform = ''; v.style.transformOrigin = '';
-}
-
-function capturePhoto() {
-  const v = document.getElementById('videoEl');
-
-  if (!v.videoWidth || v.readyState < 2) {
-    doToast('📷', 'Camera loading…', 'Wait a moment then try again');
-    return;
-  }
-
-  // Brief delay to let auto-focus settle before grabbing the frame
-  setTimeout(() => {
-    const c = document.getElementById('snapCanvas');
-    const vw = v.videoWidth  || 1280;
-    const vh = v.videoHeight || 720;
-    c.width  = vw;
-    c.height = vh;
-    const ctx = c.getContext('2d');
-
-    // Always draw the full video frame — no cropping unless user zoomed
-    if (currentZoom > 2) {
-      const sw = Math.round(vw / currentZoom);
-      const sh = Math.round(vh / currentZoom);
-      const sx = Math.round((vw - sw) / 2);
-      const sy = Math.round((vh - sh) / 2);
-      ctx.drawImage(v, sx, sy, sw, sh, 0, 0, vw, vh);
-    } else {
-      ctx.drawImage(v, 0, 0, vw, vh);
-    }
-
-    stopStream();
-    analyzePhoto(c.toDataURL('image/jpeg', 0.90));
-  }, 300);
-}
-
-function handleGallery(e) {
-  const file = e.target.files[0]; if(!file) return;
-  const r = new FileReader();
-  r.onload = ev => analyzePhoto(ev.target.result);
-  r.readAsDataURL(file);
+function handleNativeCapture(e) {
+  const file = e.target.files[0];
+  if (!file) { closeCamera(); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    closeCamera();
+    analyzePhoto(ev.target.result);
+  };
+  reader.readAsDataURL(file);
   e.target.value = '';
 }
 
