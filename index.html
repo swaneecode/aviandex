@@ -83,9 +83,11 @@ html,body{height:100%;overflow:hidden;background:var(--sky);color:var(--text);fo
 .event-card:active{transform:scale(.97)}
 .event-card.ev-active{border:1px solid rgba(247,201,72,.4);background:linear-gradient(135deg,rgba(247,201,72,.12),rgba(255,107,107,.08))}
 .event-card.ev-upcoming{border:1px solid rgba(0,212,180,.25);background:linear-gradient(135deg,rgba(0,212,180,.08),rgba(167,139,250,.06))}
+.event-card.ev-past{border:1px solid rgba(90,128,144,.25);background:linear-gradient(135deg,rgba(90,128,144,.06),rgba(50,50,80,.06));opacity:.6}
 .ev-badge{display:inline-block;font-size:9px;font-weight:800;padding:2px 8px;border-radius:6px;margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase}
 .ev-badge.live{background:rgba(61,255,160,.2);color:var(--green);border:1px solid rgba(61,255,160,.3)}
 .ev-badge.soon{background:rgba(0,212,180,.15);color:var(--teal2);border:1px solid rgba(0,212,180,.25)}
+.ev-badge.past{background:rgba(90,128,144,.15);color:var(--muted);border:1px solid rgba(90,128,144,.25)}
 .ev-icon{font-size:28px;margin-bottom:4px;display:block}
 .ev-name{font-family:'Righteous',cursive;font-size:13px;margin-bottom:3px}
 .ev-desc{font-size:10px;color:var(--muted);line-height:1.4;margin-bottom:6px}
@@ -484,6 +486,15 @@ function getLevel(xp) {
 // ═══════════════════════════════════════════
 const MONTH = new Date().getMonth();
 const SEASON = MONTH>=2&&MONTH<=4?'spring':MONTH>=5&&MONTH<=7?'summer':MONTH>=8&&MONTH<=10?'fall':'winter';
+const SEASON_ORDER = ['winter','spring','summer','fall'];
+function getEventStatus(ev) {
+  if (ev.season === SEASON) return 'active';
+  const cur = SEASON_ORDER.indexOf(SEASON);
+  const evIdx = SEASON_ORDER.indexOf(ev.season);
+  // Past if the season index is before current (wrapping: winter=0 comes after fall=3)
+  const isPast = ((evIdx - cur + 4) % 4) > 0 && ((evIdx - cur + 4) % 4) <= 2;
+  return isPast ? 'past' : 'upcoming';
+}
 
 const EVENTS = [
   {id:'spring', name:'Spring Migration Watch', icon:'🌸', season:'spring', xpMult:2,
@@ -611,9 +622,14 @@ function viewDexEntry(id) {
 function renderEventsStrip() {
   const strip = document.getElementById('eventsStrip');
   strip.innerHTML = EVENTS.map(ev => {
-    const isActive = ev.season === SEASON;
-    return `<div class="event-card ${isActive?'ev-active':'ev-upcoming'}" onclick="goScreen('eventsScreen')">
-      <span class="ev-badge ${isActive?'live':'soon'}">${isActive?'🔴 LIVE NOW':'🔵 UPCOMING'}</span>
+    const status = getEventStatus(ev);
+    const isActive = status === 'active';
+    const isPast = status === 'past';
+    const cardClass = isActive ? 'ev-active' : isPast ? 'ev-past' : 'ev-upcoming';
+    const badgeClass = isActive ? 'live' : isPast ? 'past' : 'soon';
+    const badgeLabel = isActive ? '🔴 LIVE NOW' : isPast ? '⬜ ENDED' : '🔵 UPCOMING';
+    return `<div class="event-card ${cardClass}" onclick="goScreen('eventsScreen')">
+      <span class="ev-badge ${badgeClass}">${badgeLabel}</span>
       <span class="ev-icon">${ev.icon}</span>
       <div class="ev-name">${ev.name}</div>
       <div class="ev-desc">${ev.desc.substring(0,55)}…</div>
@@ -626,11 +642,15 @@ function renderEventsStrip() {
 function renderEvents() {
   document.getElementById('seasonLbl').textContent = SEASON.charAt(0).toUpperCase()+SEASON.slice(1)+' Season';
   document.getElementById('eventsContent').innerHTML = EVENTS.map(ev => {
-    const isActive = ev.season === SEASON;
-    return `<div class="evf-card">
+    const status = getEventStatus(ev);
+    const isActive = status === 'active';
+    const isPast = status === 'past';
+    const badgeClass = isActive ? 'live' : isPast ? 'past' : 'soon';
+    const badgeLabel = isActive ? '🔴 Live' : isPast ? '⬜ Ended' : '🔵 Soon';
+    return `<div class="evf-card" style="${isPast ? 'opacity:.6' : ''}">
       <div class="evf-hero ${isActive?'ah':'uh'}">${ev.icon}</div>
       <div class="evf-body">
-        <div class="evf-top"><div class="evf-name">${ev.name}</div><span class="ev-badge ${isActive?'live':'soon'}">${isActive?'🔴 Live':'🔵 Soon'}</span></div>
+        <div class="evf-top"><div class="evf-name">${ev.name}</div><span class="ev-badge ${badgeClass}">${badgeLabel}</span></div>
         <div class="evf-desc">${ev.desc}</div>
         <div class="evf-dates">📅 ${ev.dates}</div>
         <div class="evf-rewards">
