@@ -83,11 +83,9 @@ html,body{height:100%;overflow:hidden;background:var(--sky);color:var(--text);fo
 .event-card:active{transform:scale(.97)}
 .event-card.ev-active{border:1px solid rgba(247,201,72,.4);background:linear-gradient(135deg,rgba(247,201,72,.12),rgba(255,107,107,.08))}
 .event-card.ev-upcoming{border:1px solid rgba(0,212,180,.25);background:linear-gradient(135deg,rgba(0,212,180,.08),rgba(167,139,250,.06))}
-.event-card.ev-past{border:1px solid rgba(90,128,144,.25);background:linear-gradient(135deg,rgba(90,128,144,.06),rgba(50,50,80,.06));opacity:.6}
 .ev-badge{display:inline-block;font-size:9px;font-weight:800;padding:2px 8px;border-radius:6px;margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase}
 .ev-badge.live{background:rgba(61,255,160,.2);color:var(--green);border:1px solid rgba(61,255,160,.3)}
 .ev-badge.soon{background:rgba(0,212,180,.15);color:var(--teal2);border:1px solid rgba(0,212,180,.25)}
-.ev-badge.past{background:rgba(90,128,144,.15);color:var(--muted);border:1px solid rgba(90,128,144,.25)}
 .ev-icon{font-size:28px;margin-bottom:4px;display:block}
 .ev-name{font-family:'Righteous',cursive;font-size:13px;margin-bottom:3px}
 .ev-desc{font-size:10px;color:var(--muted);line-height:1.4;margin-bottom:6px}
@@ -486,15 +484,6 @@ function getLevel(xp) {
 // ═══════════════════════════════════════════
 const MONTH = new Date().getMonth();
 const SEASON = MONTH>=2&&MONTH<=4?'spring':MONTH>=5&&MONTH<=7?'summer':MONTH>=8&&MONTH<=10?'fall':'winter';
-const SEASON_ORDER = ['winter','spring','summer','fall'];
-function getEventStatus(ev) {
-  if (ev.season === SEASON) return 'active';
-  const cur = SEASON_ORDER.indexOf(SEASON);
-  const evIdx = SEASON_ORDER.indexOf(ev.season);
-  // Past if the season index is before current (wrapping: winter=0 comes after fall=3)
-  const isPast = ((evIdx - cur + 4) % 4) > 0 && ((evIdx - cur + 4) % 4) <= 2;
-  return isPast ? 'past' : 'upcoming';
-}
 
 const EVENTS = [
   {id:'spring', name:'Spring Migration Watch', icon:'🌸', season:'spring', xpMult:2,
@@ -622,14 +611,9 @@ function viewDexEntry(id) {
 function renderEventsStrip() {
   const strip = document.getElementById('eventsStrip');
   strip.innerHTML = EVENTS.map(ev => {
-    const status = getEventStatus(ev);
-    const isActive = status === 'active';
-    const isPast = status === 'past';
-    const cardClass = isActive ? 'ev-active' : isPast ? 'ev-past' : 'ev-upcoming';
-    const badgeClass = isActive ? 'live' : isPast ? 'past' : 'soon';
-    const badgeLabel = isActive ? '🔴 LIVE NOW' : isPast ? '⬜ ENDED' : '🔵 UPCOMING';
-    return `<div class="event-card ${cardClass}" onclick="goScreen('eventsScreen')">
-      <span class="ev-badge ${badgeClass}">${badgeLabel}</span>
+    const isActive = ev.season === SEASON;
+    return `<div class="event-card ${isActive?'ev-active':'ev-upcoming'}" onclick="goScreen('eventsScreen')">
+      <span class="ev-badge ${isActive?'live':'soon'}">${isActive?'🔴 LIVE NOW':'🔵 UPCOMING'}</span>
       <span class="ev-icon">${ev.icon}</span>
       <div class="ev-name">${ev.name}</div>
       <div class="ev-desc">${ev.desc.substring(0,55)}…</div>
@@ -642,15 +626,11 @@ function renderEventsStrip() {
 function renderEvents() {
   document.getElementById('seasonLbl').textContent = SEASON.charAt(0).toUpperCase()+SEASON.slice(1)+' Season';
   document.getElementById('eventsContent').innerHTML = EVENTS.map(ev => {
-    const status = getEventStatus(ev);
-    const isActive = status === 'active';
-    const isPast = status === 'past';
-    const badgeClass = isActive ? 'live' : isPast ? 'past' : 'soon';
-    const badgeLabel = isActive ? '🔴 Live' : isPast ? '⬜ Ended' : '🔵 Soon';
-    return `<div class="evf-card" style="${isPast ? 'opacity:.6' : ''}">
+    const isActive = ev.season === SEASON;
+    return `<div class="evf-card">
       <div class="evf-hero ${isActive?'ah':'uh'}">${ev.icon}</div>
       <div class="evf-body">
-        <div class="evf-top"><div class="evf-name">${ev.name}</div><span class="ev-badge ${badgeClass}">${badgeLabel}</span></div>
+        <div class="evf-top"><div class="evf-name">${ev.name}</div><span class="ev-badge ${isActive?'live':'soon'}">${isActive?'🔴 Live':'🔵 Soon'}</span></div>
         <div class="evf-desc">${ev.desc}</div>
         <div class="evf-dates">📅 ${ev.dates}</div>
         <div class="evf-rewards">
@@ -879,7 +859,21 @@ function showResultScreen({ bird, alreadyCaught, confidence, photoSrc }) {
   const finalXp  = (bird.xp || 80) * xpMult;
   const emoji    = rarityEmoji(bird.rarity || 'common');
 
-  window._pending = { bird, emoji, photoSrc, xpMult, finalXp };
+  // Compress photo to thumbnail size before storing to avoid memory issues
+  let thumbSrc = photoSrc;
+  if (photoSrc) {
+    try {
+      const img = new Image();
+      img.src = photoSrc;
+      const thumbCanvas = document.createElement('canvas');
+      thumbCanvas.width = 400;
+      thumbCanvas.height = 300;
+      const tctx = thumbCanvas.getContext('2d');
+      // Draw once image loads - we'll use original if this fails
+      thumbSrc = photoSrc; // use original for now, compress on save
+    } catch(e) { thumbSrc = photoSrc; }
+  }
+  window._pending = { bird, emoji, photoSrc: thumbSrc, xpMult, finalXp };
 
   el.innerHTML = `
     <div class="res-header"><div class="res-back" onclick="backToCam()">←</div><div class="res-heading">Bird Identified! 🎉</div><div style="width:38px"></div></div>
@@ -939,8 +933,15 @@ function rarityEmoji(r) { return r==='legendary'?'🦅':r==='rare'?'🦉':'🐦'
 // ═══════════════════════════════════════════
 function logBird() {
   const p = window._pending;
-  if (!p) return;
+  if (!p) { 
+    doToast('❌','Error','Please try scanning the bird again');
+    return; 
+  }
   const { bird, emoji, photoSrc, xpMult, finalXp } = p;
+  if (!bird) {
+    doToast('❌','Error','Bird data missing — please try again');
+    return;
+  }
 
   const dexId = `bird_${Date.now()}_${Math.random().toString(36).substr(2,6)}`;
   const entry = {
@@ -962,8 +963,38 @@ function logBird() {
   state.streak   = (state.streak||0) + 1;
   state._lastId  = dexId;
 
-  // Save thumbnail photo
-  if (photoSrc) state.photos[dexId] = photoSrc;
+  // Save compressed thumbnail to localStorage
+  if (photoSrc) {
+    try {
+      // Try to compress before saving
+      const img = new Image();
+      img.onload = function() {
+        try {
+          const tc = document.createElement('canvas');
+          const maxW = 300, maxH = 225;
+          let w = img.width, h = img.height;
+          if (w > maxW) { h = h*(maxW/w); w = maxW; }
+          if (h > maxH) { w = w*(maxH/h); h = maxH; }
+          tc.width = w; tc.height = h;
+          tc.getContext('2d').drawImage(img, 0, 0, w, h);
+          state.photos[dexId] = tc.toDataURL('image/jpeg', 0.7);
+          save();
+          renderHome();
+        } catch(e) {
+          state.photos[dexId] = photoSrc;
+          save();
+          renderHome();
+        }
+      };
+      img.onerror = function() {
+        state.photos[dexId] = photoSrc;
+        save(); renderHome();
+      };
+      img.src = photoSrc;
+    } catch(e) {
+      state.photos[dexId] = photoSrc;
+    }
+  }
 
   // Journal entry
   state.journal.push({
@@ -982,7 +1013,10 @@ function logBird() {
     eventName: ACTIVE_EVENT ? ACTIVE_EVENT.name : null,
   });
 
-  save();
+  // save() called inside photo compression callback above
+  // For non-photo entries, save immediately
+  if (!photoSrc) save();
+  
   spawnConfetti();
 
   const msgs = { legendary:'🌟 LEGENDARY CATCH!', rare:'💜 Rare Discovery!', common:'✅ New Species!' };
