@@ -483,7 +483,22 @@ function getLevel(xp) {
 // SEASONAL EVENTS
 // ═══════════════════════════════════════════
 const MONTH = new Date().getMonth();
+// Season by calendar month (0=Jan)
+// Spring: Mar-May (2-4), Summer: Jun-Aug (5-7), Fall: Sep-Nov (8-10), Winter: Dec-Feb (11,0,1)
 const SEASON = MONTH>=2&&MONTH<=4?'spring':MONTH>=5&&MONTH<=7?'summer':MONTH>=8&&MONTH<=10?'fall':'winter';
+
+// Season order for determining past/current/upcoming
+const SEASON_ORDER = ['winter','spring','summer','fall'];
+const CURRENT_SEASON_IDX = SEASON_ORDER.indexOf(SEASON);
+
+function getEventStatus(eventSeason) {
+  const eventIdx = SEASON_ORDER.indexOf(eventSeason);
+  if (eventSeason === SEASON) return 'active';
+  // Next season(s) are upcoming, previous are ended
+  // Account for year wrap (winter comes after fall)
+  const diff = (eventIdx - CURRENT_SEASON_IDX + 4) % 4;
+  return diff > 0 ? 'upcoming' : 'ended';
+}
 
 const EVENTS = [
   {id:'spring', name:'Spring Migration Watch', icon:'🌸', season:'spring', xpMult:2,
@@ -499,7 +514,7 @@ const EVENTS = [
    desc:'Raptors and owls are most visible in winter. Legendary birds earn 3× XP — get out and look up!',
    reward:'Frost Warden Title + 500 Bonus XP', dates:'Dec 1 – Feb 28'},
 ];
-const ACTIVE_EVENT = EVENTS.find(e => e.season === SEASON);
+const ACTIVE_EVENT = EVENTS.find(e => e.season === SEASON); // current season's event
 const RARITY_IC = {common:'🟢', rare:'🟣', legendary:'⭐'};
 
 // ═══════════════════════════════════════════
@@ -610,8 +625,15 @@ function viewDexEntry(id) {
 // ═══════════════════════════════════════════
 function renderEventsStrip() {
   const strip = document.getElementById('eventsStrip');
-  strip.innerHTML = EVENTS.map(ev => {
-    const isActive = ev.season === SEASON;
+  // Only show active and upcoming events — hide ended ones
+  const visibleEvents = EVENTS.filter(ev => getEventStatus(ev.season) !== 'ended');
+  if (visibleEvents.length === 0) {
+    strip.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:10px">No active events right now — check back next season!</div>';
+    return;
+  }
+  strip.innerHTML = visibleEvents.map(ev => {
+    const status = getEventStatus(ev.season);
+    const isActive = status === 'active';
     return `<div class="event-card ${isActive?'ev-active':'ev-upcoming'}" onclick="goScreen('eventsScreen')">
       <span class="ev-badge ${isActive?'live':'soon'}">${isActive?'🔴 LIVE NOW':'🔵 UPCOMING'}</span>
       <span class="ev-icon">${ev.icon}</span>
@@ -624,13 +646,20 @@ function renderEventsStrip() {
 }
 
 function renderEvents() {
-  document.getElementById('seasonLbl').textContent = SEASON.charAt(0).toUpperCase()+SEASON.slice(1)+' Season';
-  document.getElementById('eventsContent').innerHTML = EVENTS.map(ev => {
-    const isActive = ev.season === SEASON;
+  const seasonName = {spring:'Spring 🌸', summer:'Summer ☀️', fall:'Autumn 🍂', winter:'Winter ❄️'}[SEASON];
+  document.getElementById('seasonLbl').textContent = seasonName;
+  const visibleEvents = EVENTS.filter(ev => getEventStatus(ev.season) !== 'ended');
+  if (visibleEvents.length === 0) {
+    document.getElementById('eventsContent').innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--muted)"><div style="font-size:48px;margin-bottom:12px">🌍</div><div style="font-family:'Righteous',cursive;font-size:18px;color:var(--teal2);margin-bottom:8px">Season Complete!</div><div style="font-size:13px;line-height:1.6">All events for this year have ended. New seasonal events start in Winter — keep birding!</div></div>`;
+    return;
+  }
+  document.getElementById('eventsContent').innerHTML = visibleEvents.map(ev => {
+    const status = getEventStatus(ev.season);
+    const isActive = status === 'active';
     return `<div class="evf-card">
       <div class="evf-hero ${isActive?'ah':'uh'}">${ev.icon}</div>
       <div class="evf-body">
-        <div class="evf-top"><div class="evf-name">${ev.name}</div><span class="ev-badge ${isActive?'live':'soon'}">${isActive?'🔴 Live':'🔵 Soon'}</span></div>
+        <div class="evf-top"><div class="evf-name">${ev.name}</div><span class="ev-badge ${isActive?'live':'soon'}">${isActive?'🔴 Live':'🔵 Upcoming'}</span></div>
         <div class="evf-desc">${ev.desc}</div>
         <div class="evf-dates">📅 ${ev.dates}</div>
         <div class="evf-rewards">
