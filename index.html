@@ -848,10 +848,14 @@ function showResultScreen({ bird, alreadyCaught, confidence, photoSrc }) {
   }
 
   // Check if already in dex
-  const existing = state.dex.find(b =>
-    (bird.scientific_name && b.sci && b.sci.toLowerCase() === bird.scientific_name.toLowerCase()) ||
-    (bird.common_name && b.name.toLowerCase() === bird.common_name.toLowerCase())
-  );
+  // Strict duplicate check — match on scientific name OR common name
+  const existing = state.dex.find(b => {
+    const sciMatch = bird.scientific_name && b.sci && 
+      b.sci.toLowerCase().trim() === bird.scientific_name.toLowerCase().trim();
+    const nameMatch = bird.common_name && b.name && 
+      b.name.toLowerCase().trim() === bird.common_name.toLowerCase().trim();
+    return sciMatch || nameMatch;
+  });
   const isCaught = !!existing;
   if (existing) window._pending = { ...(window._pending||{}), existingId: existing.id };
   const conf     = confidence || bird.confidence || 88;
@@ -940,6 +944,20 @@ function logBird() {
   const { bird, emoji, photoSrc, xpMult, finalXp } = p;
   if (!bird) {
     doToast('❌','Error','Bird data missing — please try again');
+    return;
+  }
+
+  // Hard duplicate guard — check dex right now before adding
+  const alreadyExists = state.dex.find(b => {
+    const sciMatch = bird.scientific_name && b.sci &&
+      b.sci.toLowerCase().trim() === bird.scientific_name.toLowerCase().trim();
+    const nameMatch = bird.common_name && b.name &&
+      b.name.toLowerCase().trim() === bird.common_name.toLowerCase().trim();
+    return sciMatch || nameMatch;
+  });
+  if (alreadyExists) {
+    doToast('✅', 'Already in your dex!', `${bird.common_name} is already logged`);
+    goHome();
     return;
   }
 
@@ -1113,7 +1131,27 @@ function spawnConfetti() {
 // ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
+
+// Clean up any duplicate entries that may have been added previously
+function deduplicateDex() {
+  const seen = new Set();
+  const cleaned = [];
+  for (const bird of state.dex) {
+    const key = (bird.sci || bird.name || '').toLowerCase().trim();
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      cleaned.push(bird);
+    }
+  }
+  if (cleaned.length !== state.dex.length) {
+    console.log(`Removed ${state.dex.length - cleaned.length} duplicate dex entries`);
+    state.dex = cleaned;
+    save();
+  }
+}
+
 buildAvatarGrid();
+deduplicateDex(); // run on every load to clean up past duplicates
 
 if (state.profile) {
   showScreen('homeScreen');
