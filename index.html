@@ -487,17 +487,24 @@ const MONTH = new Date().getMonth();
 // Spring: Mar-May (2-4), Summer: Jun-Aug (5-7), Fall: Sep-Nov (8-10), Winter: Dec-Feb (11,0,1)
 const SEASON = MONTH>=2&&MONTH<=4?'spring':MONTH>=5&&MONTH<=7?'summer':MONTH>=8&&MONTH<=10?'fall':'winter';
 
-// Season order for determining past/current/upcoming
-const SEASON_ORDER = ['winter','spring','summer','fall'];
-const CURRENT_SEASON_IDX = SEASON_ORDER.indexOf(SEASON);
-
+// Determine if an event is active, upcoming, or ended based on current month
 function getEventStatus(eventSeason) {
-  const eventIdx = SEASON_ORDER.indexOf(eventSeason);
   if (eventSeason === SEASON) return 'active';
-  // Next season(s) are upcoming, previous are ended
-  // Account for year wrap (winter comes after fall)
-  const diff = (eventIdx - CURRENT_SEASON_IDX + 4) % 4;
-  return diff > 0 ? 'upcoming' : 'ended';
+  // Spring: Mar-May (months 2-4)   — ended if current month > 4
+  // Summer: Jun-Aug (months 5-7)   — ended if current month > 7
+  // Fall:   Sep-Nov (months 8-10)  — ended if current month > 10
+  // Winter: Dec-Feb (months 11,0,1)— never ended mid-cycle
+  const endMonth = {spring:4, summer:7, fall:10, winter:1};
+  const startMonth = {spring:2, summer:5, fall:8, winter:11};
+  const end = endMonth[eventSeason];
+  // If current month is past the end month for this season, it's ended
+  // (Winter wraps around year so treat separately)
+  if (eventSeason === 'winter') {
+    // Winter is upcoming if we haven't hit December yet (month 11)
+    return MONTH < 11 && MONTH > 1 ? 'upcoming' : 'active';
+  }
+  if (MONTH > end) return 'ended';
+  return 'upcoming';
 }
 
 const EVENTS = [
